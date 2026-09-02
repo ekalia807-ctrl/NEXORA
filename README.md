@@ -46,10 +46,7 @@ Dengan integrasi **Smart Recommendation** dan kalkulasi biaya otomatis, pengguna
 ### 5. Panel Approval Manajemen
 - Verifikasi pengajuan dan kontrol persetujuan (*Approval / Rejection*) peminjaman oleh Admin/Manajemen.
 
-### 6. Komunikasi & WhatsApp Checkout Generator
-- Integrasi **WhatsApp Click-to-Chat API** (`wa.me`) yang menghasilkan format pesan pemesanan terstruktur secara otomatis mencakup rincian alat, tanggal, dan data peminjam.
-
-### 7. Fitur Tambahan (Smart Recommendation)
+### 6. Fitur Tambahan (Smart Recommendation)
 - Rekomendasi peralatan pintar berbasis jumlah personel rombongan dan durasi trip pendakian.
 
 ---
@@ -75,19 +72,12 @@ Dengan integrasi **Smart Recommendation** dan kalkulasi biaya otomatis, pengguna
 
 ---
 
-## 🚀 Cara Instalasi
+## 👨‍💻 Anggota Kelompok
 
-Ikuti langkah-langkah berikut untuk menjalankan project di lingkungan lokal (*development*):
+| No | Nama Anggota | NIM / Detail | Peran / Tanggung Jawab |
+| :-: | :--- | :--- | :--- |
+| 1 | **Musfiqoh Rizkia Aulia** | `F1D02410083` | Fullstack Developer |
+| 2 | **Ni Putu Ayu Dian Sulastri** | `F1D02510021` <br>*(HMIF/XI/2025/031)* | Fullstack Developer |
+| 3 | **Meisya Ananda Puteri** | `F1D02410072` | UI/UX & Frontend Developer |
+| 4 | **Ni Wayan Eka Aprilianti** | `F1D02410021` | Backend & Database Specialist |
 
-```bash
-# 1. Clone repository kelompok
-git clone [https://github.com/username/hikerent.git](https://github.com/username/hikerent.git)
-
-# 2. Masuk ke direktori project
-cd hikerent
-
-# 3. Install seluruh dependencies
-npm install
-
-# 4. Jalankan aplikasi pada mode development
-npm run dev
