@@ -77,7 +77,7 @@ Dengan integrasi **Smart Recommendation** dan kalkulasi biaya otomatis, pengguna
 | No | Nama Anggota | NIM / Detail | Peran / Tanggung Jawab |
 | :-: | :--- | :--- | :--- |
 | 1 | **Musfiqoh Rizkia Aulia** | `F1D02410083` | Fullstack Developer |
-| 2 | **Ni Putu Ayu Dian Sulastri** | `F1D02510021` <br>*(HMIF/XI/2025/031)* | Fullstack Developer |
+| 2 | **Ni Putu Ayu Dian Sulastri** | `F1D02510021` | Fullstack Developer |
 | 3 | **Meisya Ananda Puteri** | `F1D02410072` | UI/UX & Frontend Developer |
 | 4 | **Ni Wayan Eka Aprilianti** | `F1D02410021` | Backend & Database Specialist |
 
