@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./public/images/logo.jpg" alt="HikeRent Logo" width="220" />
+  <img src="./IMAGE/HikeRent.jpg" alt="HikeRent Logo" width="220" />
   <h1>🏔️ HikeRent</h1>
   <p><strong>Platform Peminjaman Alat Pendakian Modern & Smart Hiking Gear Rental</strong></p>
   <p>
