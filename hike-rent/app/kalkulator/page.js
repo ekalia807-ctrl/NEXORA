@@ -78,8 +78,9 @@ export default function KalkulatorPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => updateQty(item.id, (selected[item.id] || 0) - 1)}
-                    className="h-7 w-7 border border-line text-ink/70 hover:border-ink/50"
+                    className="h-7 w-7 border border-line text-ink/70 hover:border-ink/50 flex items-center justify-center"
                   >
                     −
                   </button>
@@ -87,8 +88,9 @@ export default function KalkulatorPage() {
                     {selected[item.id] || 0}
                   </span>
                   <button
+                    type="button"
                     onClick={() => updateQty(item.id, (selected[item.id] || 0) + 1)}
-                    className="h-7 w-7 border border-line text-ink/70 hover:border-ink/50"
+                    className="h-7 w-7 border border-line text-ink/70 hover:border-ink/50 flex items-center justify-center"
                   >
                     +
                   </button>
