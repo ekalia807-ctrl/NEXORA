@@ -1,87 +1,90 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-const links = [
-  { href: "/katalog", label: "Katalog" },
-  { href: "/kalkulator", label: "Kalkulator" },
-  { href: "/rekomendasi", label: "Rombongan" },
-  { href: "/riwayat", label: "Riwayat" },
-];
+// localStorage itu "external store" — pakai useSyncExternalStore,
+// bukan useState + useEffect, biar gak ada cascading render.
+function subscribe(callback) {
+  window.addEventListener("storage", callback);
+  window.addEventListener("role-changed", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("role-changed", callback);
+  };
+}
+
+function getRoleSnapshot() {
+  return localStorage.getItem("role");
+}
+
+function getServerRoleSnapshot() {
+  return null; // gak ada localStorage pas render di server
+}
 
 export default function NavBar() {
+  const role = useSyncExternalStore(subscribe, getRoleSnapshot, getServerRoleSnapshot);
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  function handleLogout() {
+    localStorage.removeItem("role");
+    window.dispatchEvent(new Event("role-changed"));
+    router.push("/login");
+  }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur">
+    // ... bagian JSX di bawahnya biarin sama persis, gak perlu diubah
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-8">
-        <Link href="/" className="font-display text-lg font-bold tracking-tight text-ink">
+        <Link href="/" className="font-display text-xl font-bold tracking-tight text-ink">
           NEXORA
         </Link>
 
-        <nav className="hidden gap-7 md:flex">
-          {links.map((link) => {
-            const active = pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-[15px] transition-colors ${
-                  active ? "font-medium text-ink" : "text-ink/60 hover:text-ink"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+        <nav className="hidden items-center gap-6 text-sm text-ink/70 md:flex">
+          <Link href="/katalog" className="hover:text-ink transition-colors">Katalog</Link>
+          <Link href="/kalkulator" className="hover:text-ink transition-colors">Kalkulator</Link>
+          <Link href="/rombongan" className="hover:text-ink transition-colors">Rombongan</Link>
+          <Link href="/riwayat" className="hover:text-ink transition-colors">Riwayat</Link>
+          
+          {role === "admin" && (
+            <Link href="/admin/approval" className="font-semibold text-amber hover:text-ink transition-colors">
+              Panel Approval
+            </Link>
+          )}
+
+          {role === "user" && (
+            <Link href="/dashboard" className="hover:text-ink transition-colors">
+              Dashboard
+            </Link>
+          )}
         </nav>
 
-        <div className="hidden md:block">
-          <Link
-            href="/pengajuan"
-            className="rounded-sm bg-ridge px-5 py-2.5 text-sm text-fog transition-colors hover:bg-ink"
-          >
-            Ajukan sewa
-          </Link>
-        </div>
-
-        <button
-          className="md:hidden"
-          aria-label="Buka menu"
-          onClick={() => setOpen(!open)}
-        >
-          <span className="block h-0.5 w-6 bg-ink" />
-          <span className="mt-1.5 block h-0.5 w-6 bg-ink" />
-          <span className="mt-1.5 block h-0.5 w-4 bg-ink" />
-        </button>
-      </div>
-
-      {open && (
-        <div className="border-t border-line px-6 py-4 md:hidden">
-          <nav className="flex flex-col gap-4">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="text-[15px] text-ink"
+        <div className="flex items-center gap-3">
+          {role ? (
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-ink/60 uppercase">
+                ({role})
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-sm border border-line px-4 py-2 text-xs font-medium text-ink hover:border-ink/40 transition-colors"
               >
-                {link.label}
-              </Link>
-            ))}
+                Keluar
+              </button>
+            </div>
+          ) : (
             <Link
-              href="/pengajuan"
-              onClick={() => setOpen(false)}
-              className="mt-2 inline-block rounded-sm bg-ridge px-5 py-2.5 text-center text-sm text-fog"
+              href="/login"
+              className="rounded-sm bg-ridge px-4 py-2 text-xs font-medium text-fog hover:bg-ink transition-colors"
             >
-              Ajukan sewa
+              Masuk / Daftar
             </Link>
-          </nav>
+          )}
         </div>
-      )}
+      </div>
     </header>
   );
 }

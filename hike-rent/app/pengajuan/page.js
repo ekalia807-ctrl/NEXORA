@@ -1,24 +1,37 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 function PengajuanForm() {
-  const params = useSearchParams();
-  const presetAlat = params.get("alat") || "";
-
-  const [step, setStep] = useState(1);
-  const [fileName, setFileName] = useState("");
-  const [agreed, setAgreed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const alat = searchParams.get("alat") || "";
 
-  function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (file) setFileName(file.name);
+  // Proteksi rute langsung di awal render menggunakan localStorage
+  if (typeof window !== "undefined") {
+    const role = localStorage.getItem("role");
+    if (!role) {
+      const here = alat ? `/pengajuan?alat=${encodeURIComponent(alat)}` : "/pengajuan";
+      router.replace(`/login?redirect=${encodeURIComponent(here)}`);
+      return null;
+    }
   }
 
   function handleSubmit(e) {
     e.preventDefault();
+
+    if (typeof window !== "undefined") {
+      const role = localStorage.getItem("role");
+      if (!role) {
+        const here = alat ? `/pengajuan?alat=${encodeURIComponent(alat)}` : "/pengajuan";
+        router.push(`/login?redirect=${encodeURIComponent(here)}`);
+        return;
+      }
+    }
+
     setSubmitted(true);
   }
 
@@ -30,142 +43,66 @@ function PengajuanForm() {
           Pengajuan terkirim
         </h1>
         <p className="mt-4 text-ink/65">
-          Tim penyedia akan memverifikasi dokumen kamu. Biasanya selesai
-          dalam 6 jam. Pantau statusnya di halaman riwayat.
+          Tim penyedia akan memverifikasi dokumen kamu. Biasanya selesai dalam 6 jam. Pantau statusnya di halaman riwayat.
         </p>
-        <a
+        <Link
           href="/riwayat"
-          className="mt-8 inline-block rounded-sm bg-ridge px-6 py-3 text-sm text-fog hover:bg-ink"
+          className="mt-8 inline-block rounded-sm bg-ridge px-6 py-3 text-sm text-fog hover:bg-ink transition-colors"
         >
           Lihat status pengajuan
-        </a>
+        </Link>
       </div>
     );
   }
 
   return (
     <section className="mx-auto max-w-2xl px-6 py-16 sm:px-8">
-      <h1 className="font-display text-4xl font-bold text-ink">Ajukan sewa</h1>
+      <h1 className="font-display text-4xl font-bold text-ink">Ajukan Sewa</h1>
       <p className="mt-3 text-ink/65">
-        Isi data, unggah KTP, dan setujui ketentuan. Langkah {step} dari 3.
+        Isi data diri dan perlengkapan yang ingin disewa. Pastikan akunmu sudah terverifikasi.
       </p>
-
-      <div className="mt-6 flex gap-2">
-        {[1, 2, 3].map((n) => (
-          <div
-            key={n}
-            className={`h-1 flex-1 ${n <= step ? "bg-ridge" : "bg-line"}`}
+      <form onSubmit={handleSubmit} className="mt-10 space-y-6 border border-line bg-white/40 p-8 shadow-sm">
+        <div>
+          <label className="block text-sm text-ink/70">Alat yang Dipilih</label>
+          <input
+            type="text"
+            readOnly
+            value={alat || "Pilih alat dari katalog terlebih dahulu"}
+            className="mt-1.5 w-full border border-line bg-paper px-3 py-2 text-sm text-ink/80 outline-none"
           />
-        ))}
-      </div>
-
-      <form onSubmit={handleSubmit} className="mt-10 space-y-8">
-        {step === 1 && (
-          <div className="space-y-5">
-            <label className="block">
-              <span className="text-sm text-ink/70">Nama lengkap</span>
-              <input
-                required
-                type="text"
-                className="mt-1.5 w-full border border-line bg-white/40 px-3 py-2.5 text-sm outline-none focus:border-ridge"
-                placeholder="Sesuai KTP"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm text-ink/70">Nomor WhatsApp</span>
-              <input
-                required
-                type="tel"
-                className="mt-1.5 w-full border border-line bg-white/40 px-3 py-2.5 text-sm outline-none focus:border-ridge"
-                placeholder="08xx xxxx xxxx"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm text-ink/70">Alat yang disewa</span>
-              <input
-                type="text"
-                defaultValue={presetAlat}
-                className="mt-1.5 w-full border border-line bg-white/40 px-3 py-2.5 text-sm outline-none focus:border-ridge"
-                placeholder="Mis. Tenda dome 2 orang"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => setStep(2)}
-              className="rounded-sm bg-ridge px-6 py-2.5 text-sm text-fog hover:bg-ink"
-            >
-              Lanjut
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-5">
-            <div>
-              <span className="text-sm text-ink/70">Unggah KTP</span>
-              <label className="mt-1.5 flex cursor-pointer flex-col items-center justify-center border border-dashed border-line bg-white/40 px-4 py-10 text-center">
-                <input type="file" accept="image/*,.pdf" onChange={handleFile} className="hidden" />
-                <span className="text-sm text-ink/60">
-                  {fileName ? fileName : "Klik untuk pilih file, atau seret ke sini"}
-                </span>
-                <span className="mt-1 text-xs text-ink/40">JPG, PNG, atau PDF, maks 5MB</span>
-              </label>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="rounded-sm border border-line px-6 py-2.5 text-sm text-ink hover:border-ink/40"
-              >
-                Kembali
-              </button>
-              <button
-                type="button"
-                disabled={!fileName}
-                onClick={() => setStep(3)}
-                className="rounded-sm bg-ridge px-6 py-2.5 text-sm text-fog hover:bg-ink disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Lanjut
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-5">
-            <div className="border border-line bg-white/40 p-4 text-sm leading-relaxed text-ink/70">
-              Dengan mengirim pengajuan ini, saya menyetujui bahwa alat yang
-              disewa akan dikembalikan dalam kondisi baik, dan bersedia
-              menanggung biaya perbaikan atau penggantian bila terjadi
-              kerusakan atau kehilangan di luar pemakaian wajar.
-            </div>
-            <label className="flex items-start gap-3 text-sm text-ink/80">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-                className="mt-0.5"
-              />
-              Saya sudah membaca dan menyetujui syarat & ketentuan.
-            </label>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="rounded-sm border border-line px-6 py-2.5 text-sm text-ink hover:border-ink/40"
-              >
-                Kembali
-              </button>
-              <button
-                type="submit"
-                disabled={!agreed}
-                className="rounded-sm bg-amber px-6 py-2.5 text-sm font-medium text-ink hover:bg-amber/90 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Kirim pengajuan
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
+        <div>
+          <label className="block text-sm text-ink/70">Nama Lengkap</label>
+          <input
+            type="text"
+            required
+            placeholder="Masukkan nama lengkap sesuai KTP"
+            className="mt-1.5 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-ridge"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-ink/70">Nomor WhatsApp Aktif</label>
+          <input
+            type="text"
+            required
+            placeholder="081234567890"
+            className="mt-1.5 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-ridge"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-ink/70">Unggah Foto KTP (Simulasi)</label>
+          <input
+            type="file"
+            required
+            className="mt-1.5 w-full text-sm text-ink/70 file:mr-4 file:rounded-sm file:border-0 file:bg-ridge file:px-4 file:py-2 file:text-xs file:font-medium file:text-fog hover:file:bg-ink"
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full rounded-sm bg-ridge py-3 text-center text-sm font-medium text-fog hover:bg-ink transition-colors"
+        >
+          Kirim Pengajuan Sewa
+        </button>
       </form>
     </section>
   );
