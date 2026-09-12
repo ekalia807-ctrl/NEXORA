@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import RequireAuth from "../components/RequireAuth";
+import RequireAuth from "@/app/components/shared/RequireAuth";
 
 function recommend(people, nights) {
   const p = Math.max(people, 1);

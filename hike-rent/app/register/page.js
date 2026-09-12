@@ -13,7 +13,8 @@ export default function RegisterPage() {
   function handleRegister(e) {
     e.preventDefault();
     localStorage.setItem("role", "user");
-    router.push("/riwayat");
+    window.dispatchEvent(new Event("role-changed"));
+    router.push("/dashboard");
   }
 
   return (

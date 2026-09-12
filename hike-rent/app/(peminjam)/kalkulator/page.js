@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { gear } from "../../lib/gear";
-import RequireAuth from "../components/RequireAuth";
+import { useCatalog } from "@/lib/catalogStore";
+import RequireAuth from "@/app/components/shared/RequireAuth";
 
 export default function KalkulatorPage() {
+  const gear = useCatalog();
   const [selected, setSelected] = useState({});
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");

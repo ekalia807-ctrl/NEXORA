@@ -12,14 +12,14 @@ export default function LoginPage() {
   function handleLogin(e) {
     e.preventDefault();
     
-    let role = "user";
     if (email.includes("admin")) {
-      role = "admin";
       localStorage.setItem("role", "admin");
-      router.push("/admin/approval");
+      window.dispatchEvent(new Event("role-changed"));
+      router.push("/admin/dashboard");
     } else {
       localStorage.setItem("role", "user");
-      router.push("/riwayat");
+      window.dispatchEvent(new Event("role-changed"));
+      router.push("/dashboard");
     }
   }
 

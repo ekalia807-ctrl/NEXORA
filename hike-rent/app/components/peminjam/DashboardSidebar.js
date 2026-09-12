@@ -5,13 +5,13 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useRole } from "@/lib/useRole";
 
+// Menu khusus peminjam. Panel admin punya sidebar & routing sendiri
+// di app/components/admin/AdminSidebar.js — supaya jelas kode siapa punya siapa.
 const menuUser = [
   { href: "/dashboard", label: "Ringkasan" },
   { href: "/dashboard/profil", label: "Profil Saya" },
   { href: "/riwayat", label: "Riwayat & Status" },
 ];
-
-const menuAdmin = [{ href: "/admin/approval", label: "Approval Pengajuan" }];
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
@@ -25,7 +25,7 @@ export default function DashboardSidebar() {
     router.push("/login");
   }
 
-  const items = role === "admin" ? [...menuUser, ...menuAdmin] : menuUser;
+  const items = menuUser;
 
   return (
     <aside className="w-full shrink-0 border-b border-line bg-white/40 md:w-60 md:border-b-0 md:border-r">

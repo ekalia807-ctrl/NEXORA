@@ -1,7 +1,7 @@
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import NavBar from "./components/NavBar";
-import Footer from "./components/Footer";
+import NavBar from "@/app/components/shared/NavBar";
+import Footer from "@/app/components/shared/Footer";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { categories, gear, stockLabel, stockColor } from "../../lib/gear";
+import { categories, stockLabel, stockColor, useCatalog } from "@/lib/catalogStore";
 
 export default function KatalogPage() {
+  const gear = useCatalog();
   const [active, setActive] = useState("Semua");
 
   const filtered =

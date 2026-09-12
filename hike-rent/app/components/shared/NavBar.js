@@ -49,8 +49,8 @@ export default function NavBar() {
           <Link href="/riwayat" className="hover:text-ink transition-colors">Riwayat</Link>
           
           {role === "admin" && (
-            <Link href="/admin/approval" className="font-semibold text-amber hover:text-ink transition-colors">
-              Panel Approval
+            <Link href="/admin/dashboard" className="font-semibold text-amber hover:text-ink transition-colors">
+              Panel Admin
             </Link>
           )}
 
