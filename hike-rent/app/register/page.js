@@ -23,7 +23,7 @@ export default function RegisterPage() {
         <div className="text-center">
           <h1 className="font-display text-3xl font-bold text-ink">Daftar Akun</h1>
           <p className="mt-2 text-sm text-ink/65">
-            Buat akun baru untuk mulai menyewa alat pendakian di NEXORA.
+            Buat akun baru untuk mulai menyewa alat pendakian di HikeRent.
           </p>
         </div>
 
