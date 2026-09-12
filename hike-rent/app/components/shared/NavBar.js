@@ -81,6 +81,7 @@ export default function NavBar() {
     router.push("/login");
   }
 
+  const isAuthPage = pathname === "/login" || pathname === "/register";
   const items = role === "admin" ? menuAdmin : role === "user" ? menuUser : menuGuest;
 
   return (
@@ -132,7 +133,7 @@ export default function NavBar() {
               <span>Menu</span>
             </button>
 
-            {/* Tombol Auth Cepat di Header */}
+            {/* Tombol Auth Cepat di Header (disembunyikan di halaman login/register agar user fokus ke form) */}
             {role ? (
               <button
                 type="button"
@@ -141,14 +142,14 @@ export default function NavBar() {
               >
                 Keluar
               </button>
-            ) : (
+            ) : !isAuthPage ? (
               <Link
                 href="/login"
                 className="rounded-sm bg-ridge px-4 py-2 text-xs font-medium text-fog hover:bg-ink transition-colors"
               >
                 Masuk
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
       </header>
