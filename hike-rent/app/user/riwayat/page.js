@@ -1,3 +1,5 @@
+"use client";
+
 const history = [
   {
     id: "NX-2309",
@@ -31,19 +33,22 @@ const statusStyle = {
   Selesai: "bg-line text-ink/60",
 };
 
-export const metadata = {
-  title: "Riwayat — NEXORA",
-};
-
-export default function RiwayatPage() {
+export default function UserRiwayatPage() {
   return (
-    <section className="mx-auto max-w-4xl px-6 py-16 sm:px-8">
-      <h1 className="font-display text-4xl font-bold text-ink">Riwayat & status</h1>
-      <p className="mt-3 max-w-prose text-ink/65">
-        Semua pengajuan sewa kamu, dari yang masih berjalan sampai yang sudah selesai.
-      </p>
+    <div className="space-y-6">
+      <div className="border border-line bg-white/40 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="font-display text-2xl font-bold text-ink">Riwayat & Status</h1>
+          <span className="rounded-full bg-ridge px-3 py-1 font-mono text-xs text-fog">
+            Peminjam
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-ink/65">
+          Semua pengajuan sewa kamu, dari yang masih berjalan sampai yang sudah selesai dikembalikan.
+        </p>
+      </div>
 
-      <div className="mt-10 space-y-6">
+      <div className="space-y-6">
         {history.map((h) => (
           <div key={h.id} className="border border-line bg-white/40 p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -72,7 +77,7 @@ export default function RiwayatPage() {
                     />
                     <span
                       className={`text-xs ${
-                        i <= h.currentStep ? "text-ink" : "text-ink/35"
+                        i <= h.currentStep ? "text-ink font-medium" : "text-ink/35"
                       }`}
                     >
                       {step}
@@ -91,6 +96,6 @@ export default function RiwayatPage() {
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }

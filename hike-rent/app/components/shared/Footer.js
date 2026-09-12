@@ -16,17 +16,17 @@ export default function Footer() {
           <div>
             <div className="text-sm font-medium text-fog/90">Layanan</div>
             <ul className="mt-3 space-y-2 text-sm text-fog/70">
-              <li><Link href="/katalog" className="hover:text-fog">Katalog alat</Link></li>
-              <li><Link href="/kalkulator" className="hover:text-fog">Kalkulator biaya</Link></li>
-              <li><Link href="/rekomendasi" className="hover:text-fog">Rekomendasi rombongan</Link></li>
-              <li><Link href="/pengajuan" className="hover:text-fog">Ajukan sewa</Link></li>
+              <li><Link href="/user/katalog" className="hover:text-fog">Katalog alat</Link></li>
+              <li><Link href="/user/kalkulator" className="hover:text-fog">Kalkulator biaya</Link></li>
+              <li><Link href="/user/rekomendasi" className="hover:text-fog">Rekomendasi rombongan</Link></li>
+              <li><Link href="/user/checkout" className="hover:text-fog">Ajukan sewa</Link></li>
             </ul>
           </div>
 
           <div>
             <div className="text-sm font-medium text-fog/90">Akun</div>
             <ul className="mt-3 space-y-2 text-sm text-fog/70">
-              <li><Link href="/riwayat" className="hover:text-fog">Riwayat & status</Link></li>
+              <li><Link href="/user/riwayat" className="hover:text-fog">Riwayat & status</Link></li>
             </ul>
           </div>
         </div>

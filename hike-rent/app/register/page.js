@@ -1,21 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "";
 
   function handleRegister(e) {
     e.preventDefault();
     localStorage.setItem("role", "user");
     window.dispatchEvent(new Event("role-changed"));
-    router.push("/dashboard");
+    router.push(redirect || "/user/dashboard");
   }
+
+  const loginHref = redirect
+    ? `/login?redirect=${encodeURIComponent(redirect)}`
+    : "/login";
 
   return (
     <section className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-6 py-12">
@@ -27,7 +33,13 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <form onSubmit={handleRegister} className="mt-8 space-y-5">
+        {redirect && (
+          <div className="mt-5 rounded-sm border border-amber/40 bg-amber/15 p-3 text-xs text-ink/80">
+            Daftar akun baru untuk melanjutkan pengajuan sewa alat Anda.
+          </div>
+        )}
+
+        <form onSubmit={handleRegister} className="mt-6 space-y-5">
           <label className="block">
             <span className="text-sm text-ink/70">Nama Lengkap</span>
             <input
@@ -74,11 +86,19 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-xs text-ink/60">
           Sudah punya akun?{" "}
-          <Link href="/login" className="font-medium text-ink underline underline-offset-4">
+          <Link href={loginHref} className="font-medium text-ink underline underline-offset-4">
             Masuk di sini
           </Link>
         </p>
       </div>
     </section>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="py-24 text-center text-sm text-ink/50">Memuat formulir daftar...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

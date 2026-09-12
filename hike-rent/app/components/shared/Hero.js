@@ -17,13 +17,13 @@ export default function Hero() {
         </p>
         <div className="mt-9 flex flex-wrap gap-4">
           <Link
-            href="/katalog"
+            href="/user/katalog"
             className="rounded-sm bg-amber px-6 py-3 text-sm font-medium text-ink transition-colors hover:bg-amber/90"
           >
             Lihat katalog alat
           </Link>
           <Link
-            href="/kalkulator"
+            href="/user/kalkulator"
             className="rounded-sm border border-fog/25 px-6 py-3 text-sm text-fog transition-colors hover:border-fog/60"
           >
             Hitung estimasi biaya

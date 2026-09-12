@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "";
 
   function handleLogin(e) {
     e.preventDefault();
-    
+
     if (email.includes("admin")) {
       localStorage.setItem("role", "admin");
       window.dispatchEvent(new Event("role-changed"));
@@ -19,9 +21,13 @@ export default function LoginPage() {
     } else {
       localStorage.setItem("role", "user");
       window.dispatchEvent(new Event("role-changed"));
-      router.push("/dashboard");
+      router.push(redirect || "/user/dashboard");
     }
   }
+
+  const registerHref = redirect
+    ? `/register?redirect=${encodeURIComponent(redirect)}`
+    : "/register";
 
   return (
     <section className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-6 py-12">
@@ -33,7 +39,13 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-5">
+        {redirect && (
+          <div className="mt-5 rounded-sm border border-amber/40 bg-amber/15 p-3 text-xs text-ink/80">
+            Silakan masuk terlebih dahulu untuk melanjutkan pengajuan sewa alat Anda.
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="mt-6 space-y-5">
           <label className="block">
             <span className="text-sm text-ink/70">Email</span>
             <input
@@ -68,11 +80,19 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-xs text-ink/60">
           Belum punya akun?{" "}
-          <Link href="/register" className="font-medium text-ink underline underline-offset-4">
+          <Link href={registerHref} className="font-medium text-ink underline underline-offset-4">
             Daftar sekarang
           </Link>
         </p>
       </div>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="py-24 text-center text-sm text-ink/50">Memuat formulir masuk...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

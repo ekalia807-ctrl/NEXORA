@@ -1,6 +1,6 @@
 // Data transaksi peminjaman lintas-pengguna, khusus dipakai admin
-// (beda dengan app/(peminjam)/riwayat yang cuma nampilin punya diri sendiri).
-// Dipakai di: admin/history (histori peminjaman), admin/revenue (rekap
+// (beda dengan app/user/riwayat yang cuma nampilin punya diri sendiri).
+// Dipakai di: admin/history (histori peminjaman), admin/pendapatan (rekap
 // penghasilan), admin/reports (laporan), dan admin/dashboard (ringkasan).
 
 export const rentalTransactions = [

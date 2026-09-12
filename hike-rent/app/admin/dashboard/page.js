@@ -29,10 +29,10 @@ export default function AdminDashboardPage() {
   ];
 
   const quickLinks = [
-    { href: "/admin/catalog", label: "Kelola Katalog" },
+    { href: "/admin/katalog", label: "Kelola Katalog" },
     { href: "/admin/approval", label: "Approval Pengajuan" },
     { href: "/admin/accounts", label: "Akun Pengguna" },
-    { href: "/admin/revenue", label: "Rekap Penghasilan" },
+    { href: "/admin/pendapatan", label: "Rekap Penghasilan" },
   ];
 
   return (
