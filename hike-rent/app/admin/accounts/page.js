@@ -110,7 +110,7 @@ export default function AdminAccountsPage() {
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-sm text-ink/50">
-                  Tidak ada akun yang cocok dengan pencarian.
+                  Tidak ada akun yang cocok dengan pencariann.
                 </td>
               </tr>
             )}
