@@ -1,21 +1,111 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+// 1. Fungsi validasi tunggal untuk form register
+function validateRegisterForm({ name, email, password, confirmPassword }) {
+  const errs = {};
+  const cleanName = name.trim();
+  const cleanEmail = email.trim();
+
+  if (!cleanName) {
+    errs.name = "Nama lengkap wajib diisi";
+  } else if (cleanName.length < 3) {
+    errs.name = "Nama minimal 3 karakter";
+  }
+
+  if (!cleanEmail) {
+    errs.email = "Email wajib diisi";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    errs.email = "Format email tidak valid (contoh: nama@email.com)";
+  }
+
+  if (!password) {
+    errs.password = "Kata sandi wajib diisi";
+  } else if (password.length < 6) {
+    errs.password = "Kata sandi minimal 6 karakter";
+  }
+
+  if (!confirmPassword) {
+    errs.confirmPassword = "Konfirmasi kata sandi wajib diisi";
+  } else if (confirmPassword !== password) {
+    errs.confirmPassword = "Konfirmasi kata sandi tidak cocok";
+  }
+
+  return errs;
+}
+
+// 2. Helper icon mata (reusable)
+function EyeIcon({ open }) {
+  return open ? (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+    </svg>
+  ) : (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+}
+
+// 3. Helper spinner loading
+function Spinner() {
+  return (
+    <svg className="h-4 w-4 animate-spin text-fog" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+    </svg>
+  );
+}
+
+function RegisterForm() {
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect") || "";
+  const safeRedirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : null;
+
+  function updateField(key, val) {
+    setForm((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function handleBlur(field) {
+    const errs = validateRegisterForm(form);
+    setErrors((prev) => ({ ...prev, [field]: errs[field] || "" }));
+  }
 
   function handleRegister(e) {
     e.preventDefault();
-    localStorage.setItem("role", "user");
-    window.dispatchEvent(new Event("role-changed"));
-    router.push("/dashboard");
+    const errs = validateRegisterForm(form);
+    setErrors(errs);
+
+    if (Object.keys(errs).length > 0) {
+      setToast({ type: "error", message: "Mohon periksa kembali kolom yang belum sesuai." });
+      return;
+    }
+
+    setLoading(true);
+    setToast(null);
+
+    setTimeout(() => {
+      localStorage.setItem("role", "user");
+      window.dispatchEvent(new Event("role-changed"));
+
+      setToast({ type: "success", message: "Pendaftaran berhasil! Mengalihkan..." });
+      setTimeout(() => router.push(safeRedirect || "/user/dashboard"), 600);
+    }, 500);
   }
+
+  const loginHref = safeRedirect ? `/login?redirect=${encodeURIComponent(safeRedirect)}` : "/login";
 
   return (
     <section className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-6 py-12">
@@ -23,62 +113,156 @@ export default function RegisterPage() {
         <div className="text-center">
           <h1 className="font-display text-3xl font-bold text-ink">Daftar Akun</h1>
           <p className="mt-2 text-sm text-ink/65">
-            Buat akun baru untuk mulai menyewa alat pendakian di HikeRent.
+            Buat akun baru untuk mulai menyewa alat pendakian di NEXORA.
           </p>
         </div>
 
-        <form onSubmit={handleRegister} className="mt-8 space-y-5">
-          <label className="block">
-            <span className="text-sm text-ink/70">Nama Lengkap</span>
+        {safeRedirect && !toast && (
+          <div className="mt-5 rounded-sm border border-amber/40 bg-amber/15 p-3 text-xs text-ink/80 flex items-start gap-2">
+            <span>💡 Daftar akun baru untuk melanjutkan proses sewa alat Anda.</span>
+          </div>
+        )}
+
+        {toast && (
+          <div
+            role="alert"
+            className={`mt-5 rounded-sm border px-3.5 py-2.5 text-xs flex items-center justify-between ${
+              toast.type === "success" ? "border-moss/40 bg-moss/10 text-moss font-medium" : "border-alert/40 bg-alert/10 text-alert"
+            }`}
+          >
+            <span>{toast.message}</span>
+            <button type="button" onClick={() => setToast(null)} className="text-xs opacity-60 hover:opacity-100 ml-2">✕</button>
+          </div>
+        )}
+
+        <form onSubmit={handleRegister} noValidate className="mt-6 space-y-4">
+          {/* Nama */}
+          <div>
+            <label htmlFor="reg-name" className="block text-sm font-medium text-ink/75">Nama Lengkap</label>
             <input
+              id="reg-name"
               type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nama Anda"
-              className="mt-1.5 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-ridge"
+              autoFocus
+              disabled={loading}
+              value={form.name}
+              onChange={(e) => updateField("name", e.target.value)}
+              onBlur={() => handleBlur("name")}
+              placeholder="Contoh: Rian Anggara"
+              className={`mt-1.5 w-full border bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors ${
+                errors.name ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
+              } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
             />
-          </label>
+            {errors.name && <p className="mt-1 text-xs text-alert flex items-center gap-1"><span>⚠</span><span>{errors.name}</span></p>}
+          </div>
 
-          <label className="block">
-            <span className="text-sm text-ink/70">Email</span>
+          {/* Email */}
+          <div>
+            <label htmlFor="reg-email" className="block text-sm font-medium text-ink/75">Email</label>
             <input
+              id="reg-email"
               type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              value={form.email}
+              onChange={(e) => updateField("email", e.target.value)}
+              onBlur={() => handleBlur("email")}
               placeholder="nama@email.com"
-              className="mt-1.5 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-ridge"
+              className={`mt-1.5 w-full border bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors ${
+                errors.email ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
+              } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
             />
-          </label>
+            {errors.email && <p className="mt-1 text-xs text-alert flex items-center gap-1"><span>⚠</span><span>{errors.email}</span></p>}
+          </div>
 
-          <label className="block">
-            <span className="text-sm text-ink/70">Kata sandi</span>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="mt-1.5 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-ridge"
-            />
-          </label>
+          {/* Kata Sandi */}
+          <div>
+            <label htmlFor="reg-password" className="block text-sm font-medium text-ink/75">Kata Sandi</label>
+            <div className="relative mt-1.5">
+              <input
+                id="reg-password"
+                type={showPw ? "text" : "password"}
+                disabled={loading}
+                value={form.password}
+                onChange={(e) => updateField("password", e.target.value)}
+                onBlur={() => handleBlur("password")}
+                placeholder="Minimal 6 karakter"
+                className={`w-full border bg-paper px-3 py-2 pr-10 text-sm text-ink outline-none transition-colors ${
+                  errors.password ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
+                } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                disabled={loading}
+                aria-label={showPw ? "Sembunyikan sandi" : "Lihat sandi"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-ink/50 hover:text-ink focus:outline-none"
+              >
+                <EyeIcon open={showPw} />
+              </button>
+            </div>
+            {errors.password && <p className="mt-1 text-xs text-alert flex items-center gap-1"><span>⚠</span><span>{errors.password}</span></p>}
+          </div>
 
+          {/* Konfirmasi Kata Sandi */}
+          <div>
+            <label htmlFor="reg-confirm-password" className="block text-sm font-medium text-ink/75">Konfirmasi Kata Sandi</label>
+            <div className="relative mt-1.5">
+              <input
+                id="reg-confirm-password"
+                type={showConfirmPw ? "text" : "password"}
+                disabled={loading}
+                value={form.confirmPassword}
+                onChange={(e) => updateField("confirmPassword", e.target.value)}
+                onBlur={() => handleBlur("confirmPassword")}
+                placeholder="Ulangi kata sandi"
+                className={`w-full border bg-paper px-3 py-2 pr-10 text-sm text-ink outline-none transition-colors ${
+                  errors.confirmPassword ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
+                } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPw(!showConfirmPw)}
+                disabled={loading}
+                aria-label={showConfirmPw ? "Sembunyikan konfirmasi sandi" : "Lihat konfirmasi sandi"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-ink/50 hover:text-ink focus:outline-none"
+              >
+                <EyeIcon open={showConfirmPw} />
+              </button>
+            </div>
+            {errors.confirmPassword && <p className="mt-1 text-xs text-alert flex items-center gap-1"><span>⚠</span><span>{errors.confirmPassword}</span></p>}
+          </div>
+
+          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full rounded-sm bg-ridge py-2.5 text-center text-sm font-medium text-fog hover:bg-ink transition-colors"
+            disabled={loading}
+            className={`w-full rounded-sm bg-ridge py-2.5 text-center text-sm font-medium text-fog transition-all ${
+              loading ? "opacity-75 cursor-not-allowed" : "hover:bg-ink active:scale-[0.99]"
+            }`}
           >
-            Daftar & Masuk
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Spinner />
+                <span>Mendaftarkan...</span>
+              </span>
+            ) : "Daftar & Masuk"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-xs text-ink/60">
           Sudah punya akun?{" "}
-          <Link href="/login" className="font-medium text-ink underline underline-offset-4">
+          <Link href={loginHref} className="font-medium text-ink underline underline-offset-4 hover:text-amber">
             Masuk di sini
           </Link>
         </p>
       </div>
     </section>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="py-24 text-center text-sm text-ink/50">Memuat formulir daftar...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

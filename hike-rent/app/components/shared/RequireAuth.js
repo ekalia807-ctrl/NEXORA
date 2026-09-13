@@ -14,11 +14,23 @@ export default function RequireAuth({ children, allow }) {
   const router = useRouter();
 
   const allowed = role && (!allow || allow.includes(role));
-  const roleHome = role === "admin" ? "/admin/dashboard" : "/dashboard";
+  const roleHome = role === "admin" ? "/admin/dashboard" : "/user/dashboard";
 
   useEffect(() => {
     if (!allowed) {
-      router.replace(role ? roleHome : "/login");
+      if (role) {
+        router.replace(roleHome);
+      } else {
+        const currentPath =
+          typeof window !== "undefined"
+            ? window.location.pathname + window.location.search
+            : "";
+        const loginUrl =
+          currentPath && currentPath !== "/"
+            ? `/login?redirect=${encodeURIComponent(currentPath)}`
+            : "/login";
+        router.replace(loginUrl);
+      }
     }
   }, [allowed, role, roleHome, router]);
 

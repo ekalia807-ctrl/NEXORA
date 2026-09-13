@@ -1,8 +1,8 @@
 "use client";
 
 // Store katalog alat, dipakai BERSAMA oleh:
-//   - app/admin/catalog (CRUD: tambah/ubah/hapus alat)
-//   - app/(peminjam)/katalog (tampilan alat untuk peminjam)
+//   - app/admin/katalog (CRUD: tambah/ubah/hapus alat)
+//   - app/user/katalog (tampilan alat untuk peminjam)
 //
 // Disimpan di localStorage supaya perubahan dari admin langsung
 // kelihatan di sisi peminjam, tanpa perlu backend/database.

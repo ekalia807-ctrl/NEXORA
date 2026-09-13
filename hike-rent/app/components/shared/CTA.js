@@ -14,7 +14,7 @@ export default function CTA() {
           </p>
         </div>
         <Link
-          href="/rekomendasi"
+          href="/user/rekomendasi"
           className="shrink-0 rounded-sm bg-ridge px-6 py-3 text-sm text-fog transition-colors hover:bg-ink"
         >
           Coba rekomendasi rombongan

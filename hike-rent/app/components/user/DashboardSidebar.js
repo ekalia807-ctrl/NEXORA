@@ -3,22 +3,23 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useRole } from "@/lib/useRole";
 
-// Menu khusus admin. Terpisah total dari app/components/user/DashboardSidebar.js
-// supaya kalau ada perubahan menu admin, gak perlu sentuh kode peminjam sama sekali.
-const menuAdmin = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: "◧" },
-  { href: "/admin/katalog", label: "Katalog Alat", icon: "🎒" },
-  { href: "/admin/approval", label: "Approval Pengajuan", icon: "✔" },
-  { href: "/admin/accounts", label: "Akun Pengguna", icon: "👤" },
-  { href: "/admin/reports", label: "Laporan", icon: "📊" },
-  { href: "/admin/pendapatan", label: "Rekap Penghasilan", icon: "💰" },
-  { href: "/admin/history", label: "Histori Peminjaman", icon: "🕘" },
+// Menu lengkap khusus peminjam mencakup seluruh rute /user/*
+const menuUser = [
+  { href: "/user/dashboard", label: "Ringkasan", icon: "◧" },
+  { href: "/user/dashboard/profil", label: "Profil Saya", icon: "👤" },
+  { href: "/user/katalog", label: "Katalog Alat", icon: "🎒" },
+  { href: "/user/kalkulator", label: "Kalkulator Biaya", icon: "🧮" },
+  { href: "/user/checkout", label: "Checkout Sewa", icon: "📝" },
+  { href: "/user/riwayat", label: "Riwayat & Status", icon: "🕘" },
+  { href: "/user/rekomendasi", label: "Rekomendasi Rombongan", icon: "👥" },
 ];
 
-export default function AdminSidebar() {
+export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const role = useRole();
   const [open, setOpen] = useState(false);
 
   function handleLogout() {
@@ -29,20 +30,20 @@ export default function AdminSidebar() {
 
   return (
     <aside className="h-fit w-full shrink-0 border border-line bg-white/40 lg:sticky lg:top-24 lg:w-64">
-      {/* Header — jadi tombol toggle di layar kecil */}
+      {/* Header — jadi tombol toggle di layar mobile */}
       <div className="flex items-center justify-between border-b border-line px-5 py-4 lg:block">
         <div>
-          <span className="font-mono text-[11px] uppercase tracking-wide text-amber">
-            Panel Admin
+          <span className="font-mono text-[11px] uppercase tracking-wide text-ink/50">
+            Masuk sebagai: <span className="font-bold text-ink capitalize">{role || "Peminjam"}</span>
           </span>
           <h2 className="mt-0.5 font-display text-lg font-semibold text-ink">
-            NEXORA Admin
+            Panel Pengguna
           </h2>
         </div>
 
         <button
           className="lg:hidden"
-          aria-label="Buka menu admin"
+          aria-label="Buka menu user"
           onClick={() => setOpen(!open)}
         >
           <span className="block h-0.5 w-6 bg-ink" />
@@ -51,10 +52,14 @@ export default function AdminSidebar() {
         </button>
       </div>
 
+      {/* Navigasi Panel User */}
       <nav className={`${open ? "flex" : "hidden"} flex-col gap-1 px-3 py-4 lg:flex`}>
-        {menuAdmin.map((item) => {
+        {menuUser.map((item) => {
           const active =
-            pathname === item.href || pathname?.startsWith(item.href + "/");
+            item.href === "/user/dashboard"
+              ? pathname === "/user/dashboard"
+              : pathname === item.href || pathname?.startsWith(item.href + "/");
+
           return (
             <Link
               key={item.href}
@@ -62,7 +67,7 @@ export default function AdminSidebar() {
               onClick={() => setOpen(false)}
               className={`flex items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm transition-colors ${
                 active
-                  ? "bg-ridge text-fog"
+                  ? "bg-ridge text-fog font-medium"
                   : "text-ink/70 hover:bg-paper hover:text-ink"
               }`}
             >
@@ -73,10 +78,11 @@ export default function AdminSidebar() {
         })}
       </nav>
 
+      {/* Logout */}
       <div className={`${open ? "block" : "hidden"} border-t border-line px-3 py-3 lg:block`}>
         <button
           onClick={handleLogout}
-          className="w-full rounded-sm border border-line px-3 py-2.5 text-left text-sm text-ink/70 hover:border-alert hover:text-alert"
+          className="w-full rounded-sm border border-line px-3 py-2.5 text-left text-sm text-ink/70 hover:border-alert hover:text-alert transition-colors"
         >
           Keluar
         </button>
