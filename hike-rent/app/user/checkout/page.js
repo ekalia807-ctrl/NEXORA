@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import RequireAuth from "@/app/components/shared/RequireAuth";
 
 function CheckoutForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -103,8 +104,10 @@ function CheckoutForm() {
 
 export default function UserCheckoutPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-ink/50">Memuat checkout...</div>}>
-      <CheckoutForm />
-    </Suspense>
+    <RequireAuth allow={["user"]}>
+      <Suspense fallback={<div className="p-6 text-sm text-ink/50">Memuat checkout...</div>}>
+        <CheckoutForm />
+      </Suspense>
+    </RequireAuth>
   );
 }

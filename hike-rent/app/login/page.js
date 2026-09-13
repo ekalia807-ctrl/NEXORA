@@ -9,24 +9,28 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "";
+  
+  // Tangkap parameter redirect dari URL (misal: /user/checkout?alat=Carrier+60L)
+  const redirectUrl = searchParams.get("redirect") || "";
 
   function handleLogin(e) {
     e.preventDefault();
 
-    if (email.includes("admin")) {
+    if (email.toLowerCase().includes("admin")) {
       localStorage.setItem("role", "admin");
       window.dispatchEvent(new Event("role-changed"));
       router.push("/admin/dashboard");
     } else {
       localStorage.setItem("role", "user");
       window.dispatchEvent(new Event("role-changed"));
-      router.push(redirect || "/user/dashboard");
+      
+      // Jika ada URL redirect, arahkan ke sana. Jika tidak, ke /user/dashboard
+      router.push(redirectUrl || "/user/dashboard");
     }
   }
 
-  const registerHref = redirect
-    ? `/register?redirect=${encodeURIComponent(redirect)}`
+  const registerHref = redirectUrl
+    ? `/register?redirect=${encodeURIComponent(redirectUrl)}`
     : "/register";
 
   return (
@@ -39,7 +43,7 @@ function LoginForm() {
           </p>
         </div>
 
-        {redirect && (
+        {redirectUrl && (
           <div className="mt-5 rounded-sm border border-amber/40 bg-amber/15 p-3 text-xs text-ink/80">
             Silakan masuk terlebih dahulu untuk melanjutkan pengajuan sewa alat Anda.
           </div>
