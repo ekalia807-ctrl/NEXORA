@@ -10,8 +10,6 @@ export default function Hero() {
   const handleTimeUpdate = () => {
     const v = videoRef.current;
     if (!v || !v.duration) return;
-    // Bila sudah mendekati akhir (2.5 detik sebelum durasi habis tempat fade-out terjadi),
-    // langsung kembalikan ke detik 1.0 (setelah fade-in awal selesai)
     if (v.currentTime >= v.duration - 2.5) {
       v.currentTime = 1.0;
     }
