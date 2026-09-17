@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useCatalog, categories, stockLabel, stockColor } from "@/lib/catalogStore";
 import { formatRupiah } from "@/lib/hitungBiaya";
+import { useRole } from "@/lib/useRole";
 
 const SORT_OPTIONS = [
   { value: "nama-asc", label: "Nama (A-Z)" },
@@ -12,6 +13,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function CatalogView() {
+  const role = useRole();
   const gear = useCatalog();
   const [search, setSearch] = useState("");
   const [kategori, setKategori] = useState("Semua");
@@ -98,20 +100,47 @@ export default function CatalogView() {
                 <p className="mt-1 text-xs text-ink/45">Penyedia: {item.provider}</p>
               </div>
 
-              <div className="mt-5 flex items-center justify-between">
-                <p className="font-display text-lg font-semibold text-ink">
-                  {formatRupiah(item.price)}
-                  <span className="ml-1 text-xs font-normal text-ink/50">
-                    /{item.unit.replace("per ", "")}
-                  </span>
-                </p>
-                <Link
-                  href={`/user/kalkulator?alatId=${item.id}`}
-                  className="rounded-sm bg-ridge px-4 py-2 text-xs font-medium text-fog transition-colors hover:bg-ink"
-                >
-                  Hitung sewa
-                </Link>
-              </div>
+              {(() => {
+                const checkoutPath = `/user/checkout?alat=${encodeURIComponent(item.name)}`;
+                const targetUrl = role
+                  ? checkoutPath
+                  : `/login?redirect=${encodeURIComponent(checkoutPath)}`;
+                const kalkulatorPath = `/user/kalkulator?alatId=${item.id}`;
+                const hitungUrl = role
+                  ? kalkulatorPath
+                  : `/login?redirect=${encodeURIComponent(kalkulatorPath)}`;
+                const isOutOfStock = item.stock === "merah";
+
+                return (
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-line/40 pt-4">
+                    <p className="font-display text-lg font-semibold text-ink">
+                      {formatRupiah(item.price)}
+                      <span className="ml-1 text-xs font-normal text-ink/50">
+                        /{item.unit.replace("per ", "")}
+                      </span>
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={hitungUrl}
+                        className="border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink/50 hover:bg-paper"
+                      >
+                        Hitung
+                      </Link>
+                      <Link
+                        href={isOutOfStock ? "#" : targetUrl}
+                        aria-disabled={isOutOfStock}
+                        className={`rounded-sm px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                          isOutOfStock
+                            ? "cursor-not-allowed bg-line text-ink/40"
+                            : "bg-ridge text-fog hover:bg-ink"
+                        }`}
+                      >
+                        {isOutOfStock ? "Habis" : "Ajukan sewa"}
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>

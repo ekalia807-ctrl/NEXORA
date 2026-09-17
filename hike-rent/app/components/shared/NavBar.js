@@ -24,7 +24,7 @@ function getServerRoleSnapshot() {
 // Menu khusus Guest (Tamu): Hanya Beranda dan Katalog
 const menuGuest = [
   { href: "/", label: "Beranda", icon: "🏠", desc: "Halaman utama NEXORA" },
-  { href: "/user/katalog", label: "Katalog Alat", icon: "🎒", desc: "Jelajah peralatan & cek ketersediaan" },
+  { href: "/katalog", label: "Katalog Alat", icon: "🎒", desc: "Jelajah peralatan & cek ketersediaan" },
 ];
 
 // Menu khusus User (Peminjam terdaftar)
@@ -243,9 +243,9 @@ export default function NavBar() {
           </nav>
         </div>
 
-        {/* Footer Drawer: Aksi Masuk / Daftar atau Keluar */}
-        <div className="border-t border-line pt-5">
-          {role ? (
+        {/* Footer Drawer: Aksi Keluar hanya untuk user yang sudah login */}
+        {role && (
+          <div className="border-t border-line pt-5">
             <button
               type="button"
               onClick={handleLogout}
@@ -254,25 +254,8 @@ export default function NavBar() {
               <span>🚪</span>
               <span>Keluar dari Akun</span>
             </button>
-          ) : (
-            <div className="space-y-2">
-              <Link
-                href="/login"
-                onClick={() => setDrawerOpen(false)}
-                className="block w-full rounded-sm bg-ridge py-2.5 text-center text-sm font-medium text-fog hover:bg-ink transition-colors"
-              >
-                Masuk ke Akun
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setDrawerOpen(false)}
-                className="block w-full rounded-sm border border-line bg-white/40 py-2 text-center text-xs font-medium text-ink/70 hover:border-ink/50 hover:text-ink transition-colors"
-              >
-                Daftar Akun Baru
-              </Link>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </aside>
     </>
   );
