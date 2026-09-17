@@ -49,7 +49,7 @@ export default function Hero() {
         </p>
         <div className="mt-9 flex flex-wrap gap-4">
           <Link
-            href="/user/katalog"
+            href="/katalog"
             className="rounded-sm bg-amber px-6 py-3 text-sm font-medium text-ink transition-all hover:bg-amber/90 shadow-sm"
           >
             Lihat katalog alat

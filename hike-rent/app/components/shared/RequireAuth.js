@@ -35,11 +35,7 @@ export default function RequireAuth({ children, allow }) {
   }, [allowed, role, roleHome, router]);
 
   if (!allowed) {
-    return (
-      <div className="mx-auto max-w-md px-6 py-24 text-center text-sm text-ink/50">
-        Mengalihkan ke halaman masuk...
-      </div>
-    );
+    return null;
   }
 
   return children;
