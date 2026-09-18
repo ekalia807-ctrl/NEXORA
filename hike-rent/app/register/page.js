@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { registerAction } from "@/app/actions/auth";
 
 // 1. Fungsi validasi tunggal untuk form register
 function validateRegisterForm({ name, email, password, confirmPassword }) {
@@ -83,7 +84,7 @@ function RegisterForm() {
     setErrors((prev) => ({ ...prev, [field]: errs[field] || "" }));
   }
 
-  function handleRegister(e) {
+  async function handleRegister(e) {
     e.preventDefault();
     const errs = validateRegisterForm(form);
     setErrors(errs);
@@ -96,13 +97,33 @@ function RegisterForm() {
     setLoading(true);
     setToast(null);
 
-    setTimeout(() => {
-      localStorage.setItem("role", "user");
+    try {
+      const res = await registerAction({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+      });
+
+      if (!res.success) {
+        setToast({ type: "error", message: res.error || "Pendaftaran gagal. Silakan coba lagi." });
+        setLoading(false);
+        return;
+      }
+
+      // Sinkronkan peran ke localStorage
+      const role = res.user?.role || "user";
+      localStorage.setItem("role", role);
+      if (res.user) {
+        localStorage.setItem("user", JSON.stringify(res.user));
+      }
       window.dispatchEvent(new Event("role-changed"));
 
-      setToast({ type: "success", message: "Pendaftaran berhasil! Mengalihkan..." });
+      setToast({ type: "success", message: res.message || "Pendaftaran berhasil! Mengalihkan..." });
       setTimeout(() => router.push(safeRedirect || "/user/dashboard"), 600);
-    }, 500);
+    } catch (err) {
+      setToast({ type: "error", message: err.message || "Terjadi kesalahan saat pendaftaran." });
+      setLoading(false);
+    }
   }
 
   const loginHref = safeRedirect ? `/login?redirect=${encodeURIComponent(safeRedirect)}` : "/login";
@@ -119,7 +140,7 @@ function RegisterForm() {
 
         {safeRedirect && !toast && (
           <div className="mt-5 rounded-sm border border-amber/40 bg-amber/15 p-3 text-xs text-ink/80 flex items-start gap-2">
-            <span>💡 Daftar akun baru untuk melanjutkan proses sewa alat Anda.</span>
+            <span>Daftar akun baru untuk melanjutkan proses sewa alat Anda.</span>
           </div>
         )}
 
@@ -152,7 +173,7 @@ function RegisterForm() {
                 errors.name ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
               } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
             />
-            {errors.name && <p className="mt-1 text-xs text-alert flex items-center gap-1"><span>⚠</span><span>{errors.name}</span></p>}
+            {errors.name && <p className="mt-1 text-xs text-alert">{errors.name}</p>}
           </div>
 
           {/* Email */}
@@ -170,7 +191,7 @@ function RegisterForm() {
                 errors.email ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
               } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
             />
-            {errors.email && <p className="mt-1 text-xs text-alert flex items-center gap-1"><span>⚠</span><span>{errors.email}</span></p>}
+            {errors.email && <p className="mt-1 text-xs text-alert">{errors.email}</p>}
           </div>
 
           {/* Kata Sandi */}
@@ -199,7 +220,7 @@ function RegisterForm() {
                 <EyeIcon open={showPw} />
               </button>
             </div>
-            {errors.password && <p className="mt-1 text-xs text-alert flex items-center gap-1"><span>⚠</span><span>{errors.password}</span></p>}
+            {errors.password && <p className="mt-1 text-xs text-alert">{errors.password}</p>}
           </div>
 
           {/* Konfirmasi Kata Sandi */}
@@ -228,7 +249,7 @@ function RegisterForm() {
                 <EyeIcon open={showConfirmPw} />
               </button>
             </div>
-            {errors.confirmPassword && <p className="mt-1 text-xs text-alert flex items-center gap-1"><span>⚠</span><span>{errors.confirmPassword}</span></p>}
+            {errors.confirmPassword && <p className="mt-1 text-xs text-alert">{errors.confirmPassword}</p>}
           </div>
 
           {/* Submit Button */}

@@ -1,44 +1,164 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { authLogin, authRegister, authLogout, authMe, authKey } from "@/services/gateway/auth";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://hmif.if.unram.ac.id/api/v2";
-const PROJECT = process.env.NEXT_PUBLIC_PROJECT_ID || "hikerent";
+/**
+ * Server action untuk memproses login pengguna
+ */
+export async function loginAction(payload) {
+  try {
+    const rawEmail = typeof payload.get === "function" ? payload.get("email") : payload.email;
+    const rawPassword = typeof payload.get === "function" ? payload.get("password") : payload.password;
+    const email = String(rawEmail || "").trim().toLowerCase();
+    const password = String(rawPassword || "").trim();
 
-export async function loginAction(formData) {
-  const email = formData.get("email");
-  const password = formData.get("password");
+    if (!email || !password) {
+      return { success: false, error: "Email dan kata sandi wajib diisi." };
+    }
 
-  const res = await fetch(`${BASE_URL}/${PROJECT}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-    cache: "no-store",
-  });
+    const data = await authLogin(email, password);
 
-  const data = await res.json();
-  if (!res.ok || !data.success || !data.token) {
-    return { error: data.message || "Login gagal." };
+    if (!data.success || !data.token) {
+      return { success: false, error: data.message || "Login gagal." };
+    }
+
+    // Tentukan role: bila email mengandung 'admin' atau role dari backend 'admin'
+    const role = (data.user?.role === "admin" || email.toLowerCase().includes("admin")) ? "admin" : "user";
+    const user = { ...data.user, role };
+
+    const cookieStore = await cookies();
+    cookieStore.set("session_token", data.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: data.expires_in || 60 * 60 * 24 * 7,
+      path: "/",
+    });
+
+    cookieStore.set("user_profile", JSON.stringify(user), {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+
+    return {
+      success: true,
+      user,
+      token: data.token,
+      apiKey: data.api_key,
+      message: data.message || "Login berhasil.",
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || "Terjadi kesalahan saat menghubungi server.",
+    };
   }
-
-  const cookieStore = await cookies();
-  cookieStore.set("session_token", data.token, {
-    httpOnly: true,
-    maxAge: 60 * 60 * 24 * 7,
-    path: "/",
-  });
-  cookieStore.set("user_profile", JSON.stringify(data.user), {
-    maxAge: 60 * 60 * 24 * 7,
-    path: "/",
-  });
-
-  redirect("/dashboard");
 }
 
+/**
+ * Server action untuk registrasi akun baru (publik)
+ */
+export async function registerAction(payload) {
+  try {
+    const rawName = typeof payload.get === "function" ? payload.get("name") : payload.name;
+    const rawEmail = typeof payload.get === "function" ? payload.get("email") : payload.email;
+    const rawPassword = typeof payload.get === "function" ? payload.get("password") : payload.password;
+    const name = String(rawName || "").trim();
+    const email = String(rawEmail || "").trim().toLowerCase();
+    const password = String(rawPassword || "").trim();
+
+    if (!email || !password) {
+      return { success: false, error: "Email dan kata sandi wajib diisi." };
+    }
+
+    const regData = await authRegister({ name, email, password });
+
+    if (!regData.success) {
+      return { success: false, error: regData.message || "Registrasi gagal." };
+    }
+
+    // Auto-login setelah registrasi berhasil
+    const loginResult = await loginAction({ email, password });
+    if (loginResult.success) {
+      return {
+        success: true,
+        user: loginResult.user,
+        message: "Pendaftaran dan login berhasil!",
+      };
+    }
+
+    return {
+      success: true,
+      user: regData.user,
+      message: regData.message || "Pendaftaran akun berhasil. Silakan masuk.",
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || "Terjadi kesalahan saat registrasi.",
+    };
+  }
+}
+
+/**
+ * Server action untuk logout dan invalidasi token di server
+ */
 export async function logoutAction() {
-  const cookieStore = await cookies();
-  cookieStore.delete("session_token");
-  cookieStore.delete("user_profile");
-  redirect("/login");
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session_token")?.value;
+
+    if (token) {
+      await authLogout(token).catch(() => {});
+    }
+
+    cookieStore.delete("session_token");
+    cookieStore.delete("user_profile");
+
+    return { success: true, message: "Berhasil keluar." };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Server action untuk cek profil sesi aktif (/me)
+ */
+export async function getMeAction() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session_token")?.value;
+
+    if (!token) {
+      return { success: false, error: "Belum ada sesi aktif (token tidak ditemukan)." };
+    }
+
+    const data = await authMe(token);
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Server action untuk mengambil API Key kelompok (/key)
+ */
+export async function getKeyAction() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session_token")?.value;
+
+    if (!token) {
+      return { success: false, error: "Akses ditolak: Memerlukan login untuk mendapatkan API Key." };
+    }
+
+    const data = await authKey(token);
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 }

@@ -1,14 +1,28 @@
-// Dicocokkan ke id asli di lib/gear.js dulu; kalau id-nya berubah (misal
-// admin edit/hapus alat), fallback ke pencarian kategori + kata kunci nama.
 function cariAlat(catalog, { id, kategori, kataKunci }) {
-  const byId = catalog.find((item) => item.id === id);
+  if (!Array.isArray(catalog)) return null;
+  const byId = catalog.find(
+    (item) => String(item.id) === String(id) || String(item.slug) === String(id)
+  );
   if (byId) return byId;
+
+  const katLower = (kategori || "").toLowerCase();
+  const kwLower = (kataKunci || "").toLowerCase();
+
   return (
     catalog.find(
       (item) =>
-        item.category === kategori &&
-        item.name.toLowerCase().includes(kataKunci.toLowerCase())
-    ) || null
+        item.category &&
+        item.category.toLowerCase().includes(katLower) &&
+        item.name &&
+        item.name.toLowerCase().includes(kwLower)
+    ) ||
+    catalog.find(
+      (item) => item.name && item.name.toLowerCase().includes(kwLower)
+    ) ||
+    catalog.find(
+      (item) => item.category && item.category.toLowerCase().includes(katLower)
+    ) ||
+    null
   );
 }
 

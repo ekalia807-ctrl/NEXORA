@@ -23,32 +23,32 @@ function getServerRoleSnapshot() {
 
 // Menu khusus Guest (Tamu): Hanya Beranda dan Katalog
 const menuGuest = [
-  { href: "/", label: "Beranda", icon: "🏠", desc: "Halaman utama NEXORA" },
-  { href: "/katalog", label: "Katalog Alat", icon: "🎒", desc: "Jelajah peralatan & cek ketersediaan" },
+  { href: "/", label: "Beranda", desc: "Halaman utama NEXORA" },
+  { href: "/katalog", label: "Katalog Alat", desc: "Jelajah peralatan & cek ketersediaan" },
 ];
 
 // Menu khusus User (Peminjam terdaftar)
 const menuUser = [
-  { href: "/", label: "Beranda", icon: "🏠" },
-  { href: "/user/dashboard", label: "Ringkasan", icon: "◧" },
-  { href: "/user/dashboard/profil", label: "Profil Saya", icon: "👤" },
-  { href: "/user/katalog", label: "Katalog Alat", icon: "🎒" },
-  { href: "/user/kalkulator", label: "Kalkulator Biaya", icon: "🧮" },
-  { href: "/user/checkout", label: "Checkout Sewa", icon: "📝" },
-  { href: "/user/riwayat", label: "Riwayat & Status", icon: "🕘" },
-  { href: "/user/rekomendasi", label: "Rekomendasi Rombongan", icon: "👥" },
+  { href: "/", label: "Beranda" },
+  { href: "/user/dashboard", label: "Ringkasan" },
+  { href: "/user/dashboard/profil", label: "Profil Saya" },
+  { href: "/user/katalog", label: "Katalog Alat" },
+  { href: "/user/kalkulator", label: "Kalkulator Biaya" },
+  { href: "/user/checkout", label: "Checkout Sewa" },
+  { href: "/user/riwayat", label: "Riwayat & Status" },
+  { href: "/user/rekomendasi", label: "Rekomendasi Rombongan" },
 ];
 
 // Menu khusus Admin
 const menuAdmin = [
-  { href: "/", label: "Beranda", icon: "🏠" },
-  { href: "/admin/dashboard", label: "Dashboard Admin", icon: "◧" },
-  { href: "/admin/katalog", label: "Katalog Alat", icon: "🎒" },
-  { href: "/admin/approval", label: "Approval Pengajuan", icon: "✔" },
-  { href: "/admin/accounts", label: "Akun Pengguna", icon: "👤" },
-  { href: "/admin/reports", label: "Laporan", icon: "📊" },
-  { href: "/admin/pendapatan", label: "Rekap Penghasilan", icon: "💰" },
-  { href: "/admin/history", label: "Histori Peminjaman", icon: "🕘" },
+  { href: "/", label: "Beranda" },
+  { href: "/admin/dashboard", label: "Dashboard Admin" },
+  { href: "/admin/katalog", label: "Katalog Alat" },
+  { href: "/admin/approval", label: "Approval Pengajuan" },
+  { href: "/admin/accounts", label: "Akun Pengguna" },
+  { href: "/admin/reports", label: "Laporan" },
+  { href: "/admin/pendapatan", label: "Rekap Penghasilan" },
+  { href: "/admin/history", label: "Histori Peminjaman" },
 ];
 
 export default function NavBar() {
@@ -196,10 +196,10 @@ export default function NavBar() {
             </span>
             <div className="mt-0.5 font-display text-sm font-semibold text-ink capitalize">
               {role === "admin"
-                ? "👑 Administrator"
+                ? "Administrator"
                 : role === "user"
-                ? "🎒 Peminjam (Terverifikasi)"
-                : "🌐 Tamu (Mode Jelajah)"}
+                ? "Peminjam (Terverifikasi)"
+                : "Tamu (Mode Jelajah)"}
             </div>
             {!role && (
               <p className="mt-1 text-xs text-ink/60">
@@ -233,7 +233,6 @@ export default function NavBar() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-base" aria-hidden="true">{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                   {active && <span className="font-mono text-xs text-amber">●</span>}
@@ -251,7 +250,6 @@ export default function NavBar() {
               onClick={handleLogout}
               className="flex w-full items-center justify-center gap-2 rounded-sm border border-line bg-white/40 py-2.5 text-sm font-medium text-ink hover:border-alert hover:text-alert transition-colors"
             >
-              <span>🚪</span>
               <span>Keluar dari Akun</span>
             </button>
           </div>
