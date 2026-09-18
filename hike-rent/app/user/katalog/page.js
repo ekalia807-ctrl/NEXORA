@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRole } from "@/lib/useRole";
-import DashboardSidebar from "@/app/components/user/DashboardSidebar";
-import CatalogView from "@/app/components/shared/CatalogView";
+import DashboardSidebar from "@/components/user/DashboardSidebar";
+import CatalogView from "@/components/shared/CatalogView";
 
 export default function UserKatalogPage() {
   const role = useRole();
@@ -29,7 +29,7 @@ export default function UserKatalogPage() {
           {!role && (
             <div className="mt-4 flex flex-col gap-2 rounded-sm border border-line bg-paper/60 p-3 text-xs text-ink/70 sm:flex-row sm:items-center sm:justify-between">
               <span>
-                💡 Anda sedang menjelajah sebagai <strong>Tamu</strong>. Anda dapat melihat seluruh katalog, dan akan diarahkan masuk saat ingin mengajukan sewa.
+                Anda sedang menjelajah sebagai <strong>Tamu</strong>. Anda dapat melihat seluruh katalog, dan akan diarahkan masuk saat ingin mengajukan sewa.
               </span>
               <Link
                 href="/login"

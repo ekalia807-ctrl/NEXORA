@@ -2,9 +2,9 @@
 import Link from "next/link";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import RequireAuth from "@/app/components/shared/RequireAuth";
-import DashboardSidebar from "@/app/components/user/DashboardSidebar";
-import { useCatalog } from "@/lib/catalogStore";
+import RequireAuth from "@/components/shared/RequireAuth";
+import DashboardSidebar from "@/components/user/DashboardSidebar";
+import { useCatalogSync } from "@/lib/catalogStore";
 import {
   formatRupiah,
   hitungDurasiHari,
@@ -19,14 +19,15 @@ function KalkulatorContent() {
   const alatIdFromQuery = searchParams.get("alatId");
   const isPaketMode = searchParams.get("paket") === "1";
 
-  const gear = useCatalog();
+  const gear = useCatalogSync();
   
   // Inisialisasi state alatId secara aman tanpa useEffect
   const [alatId, setAlatId] = useState(() => {
     if (alatIdFromQuery) return alatIdFromQuery;
-    if (!isPaketMode && gear.length > 0) return gear[0].id;
     return "";
   });
+
+  const activeAlatId = alatId || (gear.length > 0 ? gear[0].id : "");
 
   const [jumlah, setJumlah] = useState(1);
   const [tanggalMulai, setTanggalMulai] = useState("");
@@ -56,9 +57,9 @@ function KalkulatorContent() {
         })
         .filter(Boolean);
     }
-    const alat = gear.find((item) => item.id === alatId);
+    const alat = gear.find((item) => item.id === activeAlatId);
     return alat ? [{ alat, jumlah: Number(jumlah) || 1 }] : [];
-  }, [isPaketMode, paket, gear, alatId, jumlah]);
+  }, [isPaketMode, paket, gear, activeAlatId, jumlah]);
 
   const totalBiaya = durasiHari
     ? baris.reduce(
@@ -120,7 +121,7 @@ function KalkulatorContent() {
           <label className="block text-sm text-ink/70 print:text-black">
             Alat
             <select
-              value={alatId}
+              value={activeAlatId}
               onChange={(e) => setAlatId(e.target.value)}
               className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-ink outline-none focus:border-ridge"
             >
@@ -130,6 +131,9 @@ function KalkulatorContent() {
                   {item.unit.replace("per ", "")}
                 </option>
               ))}
+              {gear.length === 0 && (
+                <option value="">Tidak ada alat tersedia di katalog</option>
+              )}
             </select>
           </label>
           <label className="block text-sm text-ink/70 print:text-black">

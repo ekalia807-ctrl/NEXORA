@@ -1,4 +1,4 @@
-import CatalogView from "@/app/components/shared/CatalogView";
+import CatalogView from "@/components/shared/CatalogView";
 
 export const metadata = { title: "Katalog Alat — NEXORA" };
 

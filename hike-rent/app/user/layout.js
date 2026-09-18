@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useRole } from "@/lib/useRole";
-import RequireAuth from "@/app/components/shared/RequireAuth";
+import RequireAuth from "@/components/shared/RequireAuth";
 
 // Layout area user.
 // Khusus rute /user/katalog dapat diakses oleh Tamu (guest) untuk melihat ketersediaan alat.

@@ -1,6 +1,6 @@
 "use client";
 
-import RequireAuth from "@/app/components/shared/RequireAuth";
+import RequireAuth from "@/components/shared/RequireAuth";
 
 // Semua rute di bawah /admin/* wajib lewat sini dulu.
 // RequireAuth allow=["admin"] artinya: kalau belum login -> /login,
