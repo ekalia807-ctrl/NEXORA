@@ -18,6 +18,37 @@ const SORT_OPTIONS = [
   { value: "harga-desc", label: "Harga tertinggi" },
 ];
 
+// Border kiri kartu diwarnai sesuai status stok — biar bisa di-scan sekilas
+// tanpa harus baca teks badge-nya.
+const stockAccent = {
+  hijau: "border-l-moss",
+  kuning: "border-l-amber",
+  merah: "border-l-alert",
+};
+
+// Foto alat, kalau ada. item.image itu opsional — kalau kosong atau link-nya
+// gagal dimuat, otomatis jatuh ke placeholder (nggak bikin layout pecah).
+function GearImage({ src, alt }) {
+  const [error, setError] = useState(false);
+
+  if (!src || error) {
+    return (
+      <div className="flex h-36 w-full items-center justify-center border border-line bg-paper text-xs text-ink/30">
+        Belum ada foto
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setError(true)}
+      className="h-36 w-full border border-line object-cover"
+    />
+  );
+}
+
 export default function CatalogView() {
   const router = useRouter();
   const role = useRole();
@@ -36,6 +67,14 @@ export default function CatalogView() {
     return Array.from(set);
   }, [gear]);
 
+  async function refreshWishlist() {
+    const res = await fetchWishlistAction();
+    if (res.success && Array.isArray(res.data)) {
+      setWishlist(res.data);
+    }
+    return res;
+  }
+
   useEffect(() => {
     let active = true;
     async function initWishlist() {
@@ -46,6 +85,8 @@ export default function CatalogView() {
     }
     if (role) {
       initWishlist();
+    } else {
+      setWishlist([]);
     }
     return () => {
       active = false;
@@ -65,24 +106,23 @@ export default function CatalogView() {
     );
 
     if (existing) {
-      // Hapus dari wishlist
+      // Hapus dari wishlist. Sebelumnya id row-nya ditebak di frontend
+      // (fallback Date.now() kalau response nggak punya .id), jadi id-nya
+      // sering nggak match sama data asli di backend dan delete-nya gagal
+      // diam-diam. Sekarang setelah delete berhasil, wishlist di-fetch ulang
+      // dari server, supaya id yang dipakai selalu yang asli.
       const res = await removeFromWishlistAction(existing.id);
       if (res.success) {
-        setWishlist((prev) => prev.filter((w) => w.id !== existing.id));
+        await refreshWishlist();
+      } else {
+        console.error("Gagal menghapus dari wishlist:", res.error);
       }
     } else {
-      // Tambah ke wishlist
       const res = await addToWishlistAction(item.id);
       if (res.success) {
-        setWishlist((prev) => [
-          ...prev,
-          {
-            id: res.data?.id || Date.now(),
-            gear_id: item.id,
-            gear_name: item.name,
-            gear_price: item.price,
-          },
-        ]);
+        await refreshWishlist();
+      } else {
+        console.error("Gagal menambah ke wishlist:", res.error);
       }
     }
   }
@@ -155,11 +195,10 @@ export default function CatalogView() {
           <button
             type="button"
             onClick={() => setShowWishlistOnly(!showWishlistOnly)}
-            className={`border px-3.5 py-2.5 text-xs font-semibold transition-colors ${
-              showWishlistOnly
-                ? "border-alert bg-alert/15 text-alert"
-                : "border-line bg-paper text-ink/70 hover:border-ink/50"
-            }`}
+            className={`border px-3.5 py-2.5 text-xs font-semibold transition-colors ${showWishlistOnly
+              ? "border-alert bg-alert/15 text-alert"
+              : "border-line bg-paper text-ink/70 hover:border-ink/50"
+              }`}
           >
             {showWishlistOnly
               ? `Wishlist Aktif (${wishlist.length})`
@@ -174,11 +213,13 @@ export default function CatalogView() {
       </p>
 
       {filtered.length === 0 ? (
-        <p className="mt-10 text-ink/50">
-          {showWishlistOnly
-            ? "Belum ada alat di daftar Wishlist kamu. Klik Simpan pada alat yang kamu sukai."
-            : "Tidak ada alat yang cocok dengan pencarian kamu."}
-        </p>
+        <div className="mt-10 border border-dashed border-line/70 bg-paper/50 p-8 text-center">
+          <p className="text-ink/50">
+            {showWishlistOnly
+              ? "Belum ada alat di daftar Wishlist kamu. Klik Simpan pada alat yang kamu sukai."
+              : "Tidak ada alat yang cocok dengan pencarian kamu."}
+          </p>
+        </div>
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => {
@@ -191,34 +232,35 @@ export default function CatalogView() {
             return (
               <div
                 key={item.id}
-                className="flex flex-col justify-between border border-line bg-white/40 p-5"
+                className={`flex flex-col justify-between border border-line ${stockAccent[item.stock] || "border-l-line"
+                  } border-l-4 bg-white/60 p-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md`}
               >
                 <div>
-                  <div className="flex items-start justify-between gap-3">
+                  <GearImage src={item.image} alt={item.name} />
+
+                  <div className="mt-4 flex items-start justify-between gap-3">
                     <div className="flex items-start gap-2">
                       <h3 className="font-display text-lg font-semibold text-ink">{item.name}</h3>
                       <button
                         type="button"
                         onClick={() => handleToggleWishlist(item)}
                         title={isWishlisted ? "Hapus dari Wishlist" : "Simpan ke Wishlist"}
-                        className={`mt-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors ${
-                          isWishlisted
-                            ? "bg-alert/15 text-alert border border-alert/30"
-                            : "bg-paper text-ink/50 hover:text-ink border border-line"
-                        }`}
+                        className={`mt-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors ${isWishlisted
+                          ? "bg-alert/15 text-alert border border-alert/30"
+                          : "bg-paper text-ink/50 hover:text-ink border border-line"
+                          }`}
                       >
                         {isWishlisted ? "Tersimpan" : "+ Simpan"}
                       </button>
                     </div>
-                    <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-ink/60">
+                    <span
+                      className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium text-fog ${stockColor[item.stock] || "bg-line"
+                        }`}
+                    >
                       {stockLabel[item.stock] || item.stock}
-                      <span
-                        className={`h-2 w-2 rounded-full ${stockColor[item.stock] || "bg-line"}`}
-                        aria-hidden="true"
-                      />
                     </span>
                   </div>
-                  <p className="mt-1 text-xs uppercase tracking-wide text-rust">{item.category}</p>
+                  <p className="mt-2 text-xs uppercase tracking-wide text-rust">{item.category}</p>
                   <p className="mt-3 text-sm text-ink/65">{item.note}</p>
                   <p className="mt-1 text-xs text-ink/45">Penyedia: {item.provider}</p>
                 </div>
@@ -252,11 +294,10 @@ export default function CatalogView() {
                         <Link
                           href={isOutOfStock ? "#" : targetUrl}
                           aria-disabled={isOutOfStock}
-                          className={`rounded-sm px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                            isOutOfStock
-                              ? "cursor-not-allowed bg-line text-ink/40"
-                              : "bg-ridge text-fog hover:bg-ink"
-                          }`}
+                          className={`rounded-sm px-3.5 py-1.5 text-xs font-medium transition-colors ${isOutOfStock
+                            ? "cursor-not-allowed bg-line text-ink/40"
+                            : "bg-ridge text-fog hover:bg-ink"
+                            }`}
                         >
                           {isOutOfStock ? "Habis" : "Ajukan sewa"}
                         </Link>
