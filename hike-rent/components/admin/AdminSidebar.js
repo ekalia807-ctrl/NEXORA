@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { logoutAction } from "@/app/actions/auth";
 
 // Menu khusus admin. Terpisah total dari app/components/user/DashboardSidebar.js
 // supaya kalau ada perubahan menu admin, gak perlu sentuh kode peminjam sama sekali.
@@ -22,8 +23,12 @@ export default function AdminSidebar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await logoutAction();
+    } catch {}
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
     window.dispatchEvent(new Event("role-changed"));
     router.push("/login");
   }

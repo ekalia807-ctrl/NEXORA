@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useRole } from "@/lib/useRole";
+import { logoutAction } from "@/app/actions/auth";
 
 // Menu lengkap khusus peminjam mencakup seluruh rute /user/*
 const menuUser = [
@@ -22,8 +23,12 @@ export default function DashboardSidebar() {
   const role = useRole();
   const [open, setOpen] = useState(false);
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await logoutAction();
+    } catch {}
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
     window.dispatchEvent(new Event("role-changed"));
     router.push("/login");
   }

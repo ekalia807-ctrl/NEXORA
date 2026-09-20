@@ -29,11 +29,11 @@ export default function ProfilPage() {
 
         // 2. Sinkronkan dengan data sesi aktif dari backend (/me)
         const meRes = await getMeAction();
-        if (meRes.success && meRes.data?.session) {
-          const s = meRes.data.session;
+        const s = meRes?.data?.session || meRes?.data?.data || meRes?.data;
+        if (meRes?.success && s) {
           setName((prev) => prev || s.name || "");
           setEmail(s.email || "");
-          setUserId(s.user_id || "");
+          setUserId(s.user_id || s.id || "");
           setRole(s.role || "user");
         }
       } catch (e) {

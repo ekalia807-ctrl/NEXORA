@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { logoutAction } from "@/app/actions/auth";
 
 function subscribe(callback) {
   window.addEventListener("storage", callback);
@@ -74,8 +75,12 @@ export default function NavBar() {
     };
   }, [drawerOpen]);
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await logoutAction();
+    } catch {}
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
     window.dispatchEvent(new Event("role-changed"));
     setDrawerOpen(false);
     router.push("/login");
