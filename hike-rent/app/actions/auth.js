@@ -19,20 +19,36 @@ export async function loginAction(payload) {
 
     const data = await authLogin(email, password);
 
-    if (!data.success || !data.token) {
+    // Ekstrak token dari respon API v3 (data.data.access_token) atau fallback v2 (data.token)
+    const token =
+      data.data?.access_token ||
+      data.data?.token ||
+      data.token ||
+      data.access_token;
+
+    if (!data.success || !token) {
       return { success: false, error: data.message || "Login gagal." };
     }
 
-    // Tentukan role: bila email mengandung 'admin' atau role dari backend 'admin'
-    const role = (data.user?.role === "admin" || email.toLowerCase().includes("admin")) ? "admin" : "user";
-    const user = { ...data.user, role };
+    // Ekstrak profil user dari respon API v3 (data.data.user) atau fallback v2 (data.user)
+    const rawUser = data.data?.user || data.user || {};
+
+    // Tentukan role: bila role dari backend 'admin' atau email mengandung 'admin'
+    const role =
+      rawUser.role === "admin" || email.toLowerCase().includes("admin")
+        ? "admin"
+        : "user";
+    const user = { ...rawUser, role, email: rawUser.email || email };
+
+    const expiresIn =
+      data.data?.expires_in || data.expires_in || 60 * 60 * 24 * 7;
 
     const cookieStore = await cookies();
-    cookieStore.set("session_token", data.token, {
+    cookieStore.set("session_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: data.expires_in || 60 * 60 * 24 * 7,
+      maxAge: expiresIn,
       path: "/",
     });
 
@@ -47,8 +63,11 @@ export async function loginAction(payload) {
     return {
       success: true,
       user,
-      token: data.token,
-      apiKey: data.api_key,
+      token,
+      apiKey:
+        data.data?.api_key ||
+        data.api_key ||
+        process.env.NEXT_PUBLIC_API_KEY,
       message: data.message || "Login berhasil.",
     };
   } catch (err) {
@@ -93,7 +112,7 @@ export async function registerAction(payload) {
 
     return {
       success: true,
-      user: regData.user,
+      user: regData.data?.user || regData.user,
       message: regData.message || "Pendaftaran akun berhasil. Silakan masuk.",
     };
   } catch (err) {
@@ -138,7 +157,8 @@ export async function getMeAction() {
     }
 
     const data = await authMe(token);
-    return { success: true, data };
+    const userProfile = data.data?.session || data.data || data.user || data;
+    return { success: true, data: userProfile };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -157,8 +177,10 @@ export async function getKeyAction() {
     }
 
     const data = await authKey(token);
-    return { success: true, data };
+    const apiKey = data.data?.api_key || data.api_key || process.env.NEXT_PUBLIC_API_KEY;
+    return { success: true, data: { api_key: apiKey }, raw: data };
   } catch (err) {
     return { success: false, error: err.message };
   }
 }
+

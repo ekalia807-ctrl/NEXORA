@@ -73,10 +73,10 @@ function LoginForm() {
   // Quick fill demo accounts
   function fillAccount(role) {
     if (role === "admin") {
-      setEmail("admin@nexora.id");
+      setEmail("admin@hikerent.com");
       setPassword("password123");
     } else {
-      setEmail("user@nexora.id");
+      setEmail("user@hikerent.com");
       setPassword("password123");
     }
     setError(null);
@@ -108,20 +108,20 @@ function LoginForm() {
           <div className="flex items-center justify-between font-semibold text-ink/70 mb-1.5">
             <span>Akun Uji Coba Terdaftar:</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={() => fillAccount("admin")}
               className="rounded border border-line bg-white px-2 py-1 text-[11px] font-medium text-ink hover:border-ridge transition-colors"
             >
-              Admin (admin@nexora.id)
+              Admin (admin@hikerent.com)
             </button>
             <button
               type="button"
               onClick={() => fillAccount("user")}
               className="rounded border border-line bg-white px-2 py-1 text-[11px] font-medium text-ink hover:border-ridge transition-colors"
             >
-              User (user@nexora.id)
+              User (user@hikerent.com)
             </button>
           </div>
         </div>
