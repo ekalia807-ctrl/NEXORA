@@ -25,7 +25,7 @@ const jbMono = JetBrains_Mono({
 });
 
 export const metadata = {
-  title: "NEXORA — Sewa alat pendakian, tanpa drama",
+  title: "HIKERENT — Sewa alat pendakian, tanpa drama",
   description:
     "Platform sewa alat pendakian dengan katalog real-time, kalkulator biaya otomatis, dan verifikasi dokumen dalam satu alur.",
 };
