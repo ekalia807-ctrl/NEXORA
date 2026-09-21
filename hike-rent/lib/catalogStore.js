@@ -10,7 +10,13 @@
 // menggunakan useSyncExternalStore + custom event 'catalog-changed'.
 
 import { useEffect, useSyncExternalStore } from "react";
-import { gear as seedGear, categories as defaultCategories, stockLabel, stockColor } from "./gear";
+import {
+  gear as seedGear,
+  categories as defaultCategories,
+  stockLabel,
+  stockColor,
+  normalizeGearImage,
+} from "./gear";
 
 const STORAGE_KEY = "nexora_catalog_v2";
 const EVENT_NAME = "catalog-changed";
@@ -39,6 +45,9 @@ export function normalizeBackendGear(g) {
       ? "kuning"
       : "merah");
   const priceVal = Number(g.price_per_day ?? g.price ?? 0);
+  const rawImage =
+    g.image_url ?? g.image ?? g.foto ?? g["URL FOTO"] ?? g.url_foto ?? "";
+  const image = normalizeGearImage(rawImage);
 
   return {
     id: String(g.id || g.slug || slugify(g.name)),
@@ -54,7 +63,8 @@ export function normalizeBackendGear(g) {
     availableStock: Number(g.available_stock ?? g.total_stock ?? 5),
     provider: g.provider || "Basecamp NEXORA",
     note: g.note || g.description || "",
-    imageUrl: g.image_url || null,
+    image: image,
+    imageUrl: image,
   };
 }
 
@@ -64,7 +74,16 @@ function readAll() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item) => {
+      const rawImg = item.image ?? item.imageUrl ?? item.image_url ?? "";
+      const normalizedImg = normalizeGearImage(rawImg);
+      return {
+        ...item,
+        image: normalizedImg,
+        imageUrl: normalizedImg,
+      };
+    });
   } catch {
     return [];
   }
@@ -97,6 +116,9 @@ export function addCatalogItem(item) {
     uniqueId = `${id}-${suffix}`;
   }
 
+  const rawImg = item.image ?? item.imageUrl ?? item.image_url ?? "";
+  const normalizedImage = normalizeGearImage(rawImg);
+
   const newItem = {
     ...item,
     id: uniqueId,
@@ -104,6 +126,8 @@ export function addCatalogItem(item) {
     unit: item.unit || "per hari",
     stock: item.stock || "hijau",
     category: item.category || "Lainnya",
+    image: normalizedImage,
+    imageUrl: normalizedImage,
   };
 
   const next = [newItem, ...items];
@@ -118,12 +142,23 @@ export function updateCatalogItem(id, patch) {
       String(it.id) === String(id) ||
       (it.backendId && String(it.backendId) === String(id))
     ) {
-      return {
+      const updated = {
         ...it,
         ...patch,
         id: it.id,
         price: patch.price !== undefined ? Number(patch.price) : it.price,
       };
+      if (
+        patch.image !== undefined ||
+        patch.imageUrl !== undefined ||
+        patch.image_url !== undefined
+      ) {
+        const rawImg = patch.image ?? patch.imageUrl ?? patch.image_url ?? "";
+        const normalizedImg = normalizeGearImage(rawImg);
+        updated.image = normalizedImg;
+        updated.imageUrl = normalizedImg;
+      }
+      return updated;
     }
     return it;
   });
@@ -217,4 +252,4 @@ export function useCatalogSync() {
 }
 
 export const categories = defaultCategories;
-export { stockLabel, stockColor };
+export { stockLabel, stockColor, normalizeGearImage };

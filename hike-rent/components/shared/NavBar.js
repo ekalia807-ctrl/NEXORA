@@ -24,7 +24,7 @@ function getServerRoleSnapshot() {
 
 // Menu khusus Guest (Tamu): Hanya Beranda dan Katalog
 const menuGuest = [
-  { href: "/", label: "Beranda", desc: "Halaman utama NEXORA" },
+  { href: "/", label: "Beranda", desc: "Halaman utama HIKERENT" },
   { href: "/katalog", label: "Katalog Alat", desc: "Jelajah peralatan & cek ketersediaan" },
 ];
 
@@ -52,6 +52,29 @@ const menuAdmin = [
   { href: "/admin/history", label: "Histori Peminjaman" },
 ];
 
+function MountainIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M2 20 9 7l4 7 2.5-4L22 20H2Z" />
+    </svg>
+  );
+}
+
+function Brand({ onClick }) {
+  return (
+    <Link
+      href="/"
+      onClick={onClick}
+      className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
+    >
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ridge text-amber">
+        <MountainIcon />
+      </span>
+      <span className="font-display text-lg font-bold tracking-tight text-ink">HIKERENT</span>
+    </Link>
+  );
+}
+
 export default function NavBar() {
   const role = useSyncExternalStore(subscribe, getRoleSnapshot, getServerRoleSnapshot);
   const pathname = usePathname();
@@ -78,7 +101,7 @@ export default function NavBar() {
   async function handleLogout() {
     try {
       await logoutAction();
-    } catch {}
+    } catch { }
     localStorage.removeItem("role");
     localStorage.removeItem("user");
     window.dispatchEvent(new Event("role-changed"));
@@ -87,70 +110,68 @@ export default function NavBar() {
   }
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAdminArea = pathname?.startsWith("/admin");
   const items = role === "admin" ? menuAdmin : role === "user" ? menuUser : menuGuest;
 
   return (
     <>
-      {/* Header Utama: Bagian tengah sengaja KOSONG */}
-      <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:px-8">
-          {/* Logo Brand */}
-          <Link
-            href="/"
-            className="font-display text-xl font-bold tracking-tight text-ink hover:opacity-85 transition-opacity"
-          >
-            NEXORA
-          </Link>
+      {/* Header utama: kiri = logo + menu + role, kanan = Keluar / Masuk.
+          Di area admin dibuat selebar layar supaya sejajar dengan sidebar. */}
+      <header className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-xl">
+        <div
+          className={`flex h-16 items-center justify-between gap-4 ${isAdminArea ? "px-4 sm:px-6" : "mx-auto max-w-7xl px-6 sm:px-8"
+            }`}
+        >
+          {/* Kiri */}
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <Brand />
 
-          {/* Bagian tengah KOSONG sesuai instruksi */}
-          <div className="flex-1" />
+            <span className="hidden h-5 w-px bg-line sm:block" aria-hidden="true" />
 
-          {/* Sisi Kanan: Status role + Tombol Buka Menu Samping + Tombol Cepat Auth */}
-          <div className="flex items-center gap-3">
-            {role ? (
-              <span
-                className={`font-mono text-xs uppercase px-2.5 py-1 rounded-sm border ${
-                  role === "admin"
-                    ? "border-amber/40 bg-amber/10 text-amber font-semibold"
-                    : "border-line bg-white/50 text-ink/70"
-                }`}
-              >
-                {role === "admin" ? "Admin" : "Peminjam"}
-              </span>
-            ) : (
-              <span className="hidden sm:inline-block font-mono text-xs text-ink/50 uppercase px-2 py-0.5">
-                Tamu
-              </span>
-            )}
-
-            {/* Tombol Toggle Menu Samping */}
+            {/* Tombol menu samping */}
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
               aria-label="Buka menu samping"
-              className="flex items-center gap-2.5 rounded-sm border border-line bg-white/60 px-3.5 py-2 text-xs font-semibold text-ink shadow-xs hover:border-ridge hover:bg-paper transition-all"
+              className="flex items-center gap-2 rounded-full border border-line bg-white/70 px-3.5 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ridge/40 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-ridge"
             >
-              <span className="flex flex-col gap-1 w-4" aria-hidden="true">
-                <span className="block h-0.5 w-full bg-ink" />
-                <span className="block h-0.5 w-full bg-ink" />
-                <span className="block h-0.5 w-2.5 bg-ink" />
+              <span className="flex w-4 flex-col gap-[3px]" aria-hidden="true">
+                <span className="block h-[1.5px] w-full rounded bg-ink" />
+                <span className="block h-[1.5px] w-full rounded bg-ink" />
+                <span className="block h-[1.5px] w-2.5 rounded bg-ink" />
               </span>
               <span>Menu</span>
             </button>
 
-            {/* Tombol Auth Cepat di Header (disembunyikan di halaman login/register agar user fokus ke form) */}
+            {/* Status role */}
+            {role ? (
+              <span
+                className={`hidden rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex ${role === "admin"
+                    ? "border-amber/40 bg-amber/10 text-amber"
+                    : "border-line bg-white/60 text-ink/70"
+                  }`}
+              >
+                {role === "admin" ? "Admin" : "Peminjam"}
+              </span>
+            ) : (
+              <span className="hidden text-xs text-ink/50 sm:inline-block">Tamu</span>
+            )}
+          </div>
+
+          {/* Kanan: hanya aksi auth */}
+          <div className="flex items-center">
             {role ? (
               <button
                 type="button"
                 onClick={handleLogout}
-                className="hidden sm:inline-block rounded-sm border border-line px-3 py-2 text-xs font-medium text-ink/70 hover:border-alert hover:text-alert transition-colors"
+                className="hidden rounded-full border border-line px-4 py-1.5 text-sm font-medium text-ink/70 transition-colors hover:border-alert hover:text-alert focus-visible:outline focus-visible:outline-2 focus-visible:outline-alert sm:inline-block"
               >
                 Keluar
               </button>
             ) : !isAuthPage ? (
               <Link
                 href="/login"
-                className="rounded-sm bg-ridge px-4 py-2 text-xs font-medium text-fog hover:bg-ink transition-colors"
+                className="rounded-full bg-ridge px-5 py-2 text-sm font-medium text-fog transition-colors hover:bg-ink"
               >
                 Masuk
               </Link>
@@ -159,52 +180,43 @@ export default function NavBar() {
         </div>
       </header>
 
-      {/* Backdrop Overlay saat Menu Samping Terbuka */}
+      {/* Backdrop overlay saat menu samping terbuka */}
       <div
-        className={`fixed inset-0 z-50 bg-ink/50 backdrop-blur-xs transition-opacity duration-300 ${
-          drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-50 bg-ink/50 backdrop-blur-xs transition-opacity duration-300 ${drawerOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+          }`}
         onClick={() => setDrawerOpen(false)}
         aria-hidden="true"
       />
 
-      {/* Menu Samping (Slide-over Drawer) */}
+      {/* Menu samping (slide-over dari kiri, searah dengan tombol Menu) */}
       <aside
         aria-label="Navigasi menu samping"
-        className={`fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-sm flex-col justify-between border-l border-line bg-paper p-6 shadow-2xl transition-transform duration-300 ease-out ${
-          drawerOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-full max-w-sm flex-col justify-between border-r border-line bg-paper p-6 shadow-2xl transition-transform duration-300 ease-out ${drawerOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div>
-          {/* Header Drawer */}
+          {/* Header drawer */}
           <div className="flex items-center justify-between border-b border-line pb-5">
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-ink/50">
-                Navigasi
-              </span>
-              <h2 className="font-display text-xl font-bold text-ink">NEXORA</h2>
-            </div>
+            <Brand onClick={() => setDrawerOpen(false)} />
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}
               aria-label="Tutup menu"
-              className="flex h-9 w-9 items-center justify-center rounded-sm border border-line text-ink hover:border-ink/50 hover:bg-white/60 transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-ink transition-colors hover:border-ink/40 hover:bg-white/70"
             >
               ✕
             </button>
           </div>
 
-          {/* Info Status Pengguna di Drawer */}
-          <div className="mt-5 rounded-sm border border-line bg-white/40 p-3.5">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-ink/50">
-              Akses Sekarang:
-            </span>
-            <div className="mt-0.5 font-display text-sm font-semibold text-ink capitalize">
+          {/* Info status pengguna */}
+          <div className="mt-5 rounded-xl border border-line bg-white/50 p-4">
+            <span className="text-xs text-ink/50">Akses sekarang</span>
+            <div className="mt-0.5 font-display text-sm font-semibold capitalize text-ink">
               {role === "admin"
                 ? "Administrator"
                 : role === "user"
-                ? "Peminjam (Terverifikasi)"
-                : "Tamu (Mode Jelajah)"}
+                  ? "Peminjam (Terverifikasi)"
+                  : "Tamu (Mode Jelajah)"}
             </div>
             {!role && (
               <p className="mt-1 text-xs text-ink/60">
@@ -213,49 +225,44 @@ export default function NavBar() {
             )}
           </div>
 
-          {/* Daftar Menu Navigasi Samping */}
-          <nav className="mt-6 flex flex-col gap-1.5">
-            <div className="px-1 pb-1 font-mono text-[11px] uppercase tracking-wider text-ink/40">
-              Menu Tersedia
-            </div>
+          {/* Daftar menu */}
+          <nav className="mt-6 flex flex-col gap-1">
+            <div className="px-1 pb-1 text-xs font-medium text-ink/40">Menu tersedia</div>
             {items.map((item) => {
               const active =
                 item.href === "/"
                   ? pathname === "/"
                   : item.href === "/user/dashboard" || item.href === "/admin/dashboard"
-                  ? pathname === item.href
-                  : pathname === item.href || pathname?.startsWith(item.href + "/");
+                    ? pathname === item.href
+                    : pathname === item.href || pathname?.startsWith(item.href + "/");
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setDrawerOpen(false)}
-                  className={`flex items-center justify-between rounded-sm px-3.5 py-3 text-sm transition-all ${
-                    active
-                      ? "bg-ridge text-fog font-medium shadow-xs"
-                      : "text-ink/75 hover:bg-white/60 hover:text-ink border border-transparent hover:border-line/60"
-                  }`}
+                  className={`flex items-center justify-between rounded-lg px-3.5 py-2.5 text-sm transition-colors ${active
+                      ? "bg-ridge font-medium text-fog"
+                      : "text-ink/75 hover:bg-white/70 hover:text-ink"
+                    }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span>{item.label}</span>
-                  </div>
-                  {active && <span className="font-mono text-xs text-amber">●</span>}
+                  <span>{item.label}</span>
+                  {active && <span className="text-xs text-amber">●</span>}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        {/* Footer Drawer: Aksi Keluar hanya untuk user yang sudah login */}
+        {/* Footer drawer: aksi keluar hanya untuk user yang sudah login */}
         {role && (
           <div className="border-t border-line pt-5">
             <button
               type="button"
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-line bg-white/40 py-2.5 text-sm font-medium text-ink hover:border-alert hover:text-alert transition-colors"
+              className="flex w-full items-center justify-center rounded-lg border border-line bg-white/50 py-2.5 text-sm font-medium text-ink transition-colors hover:border-alert hover:text-alert"
             >
-              <span>Keluar dari Akun</span>
+              Keluar dari Akun
             </button>
           </div>
         )}
