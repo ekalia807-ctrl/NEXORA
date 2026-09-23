@@ -110,16 +110,21 @@ function RegisterForm() {
         return;
       }
 
-      // Sinkronkan peran ke localStorage
-      const role = res.user?.role || "user";
-      localStorage.setItem("role", role);
-      if (res.user) {
-        localStorage.setItem("user", JSON.stringify(res.user));
-      }
-      window.dispatchEvent(new Event("role-changed"));
+      if (res.autoLogin) {
+        // Sinkronkan peran ke localStorage
+        const role = res.user?.role || "user";
+        localStorage.setItem("role", role);
+        if (res.user) {
+          localStorage.setItem("user", JSON.stringify(res.user));
+        }
+        window.dispatchEvent(new Event("role-changed"));
 
-      setToast({ type: "success", message: res.message || "Pendaftaran berhasil! Mengalihkan..." });
-      setTimeout(() => router.push(safeRedirect || "/user/dashboard"), 600);
+        setToast({ type: "success", message: res.message || "Pendaftaran dan login berhasil! Mengalihkan..." });
+        setTimeout(() => router.push(safeRedirect || "/user/dashboard"), 600);
+      } else {
+        setToast({ type: "success", message: res.message || "Pendaftaran akun berhasil. Mengalihkan ke halaman masuk..." });
+        setTimeout(() => router.push(loginHref), 1200);
+      }
     } catch (err) {
       setToast({ type: "error", message: err.message || "Terjadi kesalahan saat pendaftaran." });
       setLoading(false);

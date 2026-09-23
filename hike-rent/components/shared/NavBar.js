@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { logoutAction } from "@/app/actions/auth";
+import { logoutAction, getMeAction } from "@/app/actions/auth";
 
 function subscribe(callback) {
   window.addEventListener("storage", callback);
@@ -80,6 +80,22 @@ export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Auto-sinkronisasi sesi aktif dari server cookie terenkripsi jika localStorage kosong
+  useEffect(() => {
+    if (!role && typeof window !== "undefined") {
+      getMeAction()
+        .then((res) => {
+          if (res?.success && res.data) {
+            const userRole = res.data.role || "user";
+            localStorage.setItem("role", userRole);
+            localStorage.setItem("user", JSON.stringify(res.data));
+            window.dispatchEvent(new Event("role-changed"));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [role]);
 
   // Tutup drawer saat menekan Escape
   useEffect(() => {

@@ -4,27 +4,14 @@ import {
   getRentalStatusLogs,
   createRentalStatusLog,
 } from "@/services/gateway/rentalStatusLogs";
-import { cookies } from "next/headers";
-
-async function getSessionAuth() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("session_token")?.value || "";
-  let user = null;
-  const userProfileRaw = cookieStore.get("user_profile")?.value;
-  if (userProfileRaw) {
-    try {
-      user = JSON.parse(userProfileRaw);
-    } catch {}
-  }
-  return { token, user };
-}
+import { getCurrentSession } from "@/lib/session";
 
 /**
  * Mengambil seluruh catatan riwayat perubahan status sewa (Audit Trail).
  */
 export async function fetchRentalStatusLogsAction(rentalId = null) {
   try {
-    const { token } = await getSessionAuth();
+    const { token } = await getCurrentSession();
     const data = await getRentalStatusLogs(token);
     let list = Array.isArray(data) ? data : [];
 
@@ -43,7 +30,7 @@ export async function fetchRentalStatusLogsAction(rentalId = null) {
  */
 export async function createRentalStatusLogAction(logData) {
   try {
-    const { token, user } = await getSessionAuth();
+    const { token, user } = await getCurrentSession();
     const payload = {
       rental_id: Number(logData.rental_id) || 1,
       status: logData.status || "diajukan",

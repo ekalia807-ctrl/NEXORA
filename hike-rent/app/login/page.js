@@ -52,7 +52,7 @@ function LoginForm() {
       }
 
       // Sinkronisasi status peran ke localStorage untuk reaktivitas UI navbar
-      const role = res.user?.role || (email.toLowerCase().includes("admin") ? "admin" : "user");
+      const role = res.user?.role || "user";
       localStorage.setItem("role", role);
       if (res.user) {
         localStorage.setItem("user", JSON.stringify(res.user));

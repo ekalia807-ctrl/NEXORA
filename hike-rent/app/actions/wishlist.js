@@ -5,27 +5,14 @@ import {
   createWishlist,
   deleteWishlist,
 } from "@/services/gateway/wishlist";
-import { cookies } from "next/headers";
-
-async function getSessionAuth() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("session_token")?.value || "";
-  let user = null;
-  const userProfileRaw = cookieStore.get("user_profile")?.value;
-  if (userProfileRaw) {
-    try {
-      user = JSON.parse(userProfileRaw);
-    } catch {}
-  }
-  return { token, user };
-}
+import { getCurrentSession } from "@/lib/session";
 
 /**
  * Mengambil daftar seluruh wishlist untuk pengguna aktif.
  */
 export async function fetchWishlistAction() {
   try {
-    const { token, user } = await getSessionAuth();
+    const { token, user } = await getCurrentSession();
     const list = await getWishlist(token);
     
     // Jika ada user aktif, kita prioritaskan wishlist milik user tersebut
@@ -46,7 +33,7 @@ export async function fetchWishlistAction() {
  */
 export async function addToWishlistAction(gearId) {
   try {
-    const { token, user } = await getSessionAuth();
+    const { token, user } = await getCurrentSession();
     if (!token || !user?.id) {
       return {
         success: false,
@@ -72,7 +59,7 @@ export async function addToWishlistAction(gearId) {
  */
 export async function removeFromWishlistAction(wishlistId) {
   try {
-    const { token } = await getSessionAuth();
+    const { token } = await getCurrentSession();
     const res = await deleteWishlist(wishlistId, token);
     return { success: true, data: res };
   } catch (err) {

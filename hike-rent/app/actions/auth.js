@@ -1,7 +1,13 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { authLogin, authRegister, authLogout, authMe, authKey } from "@/services/gateway/auth";
+import { saveSession, getCurrentSession, destroySession } from "@/lib/session";
+
+// Daftar email resmi yang memiliki hak akses Admin
+const ADMIN_WHITELIST = [
+  "admin@hikerent.com",
+  "admin@nexora.id",
+];
 
 /**
  * Server action untuk memproses login pengguna
@@ -27,53 +33,57 @@ export async function loginAction(payload) {
       data.access_token;
 
     if (!data.success || !token) {
-      return { success: false, error: data.message || "Login gagal." };
+      return { success: false, error: data.message || "Email atau kata sandi tidak cocok." };
     }
 
     // Ekstrak profil user dari respon API v3 (data.data.user) atau fallback v2 (data.user)
     const rawUser = data.data?.user || data.user || {};
 
-    // Tentukan role: bila role dari backend 'admin' atau email mengandung 'admin'
+    // Penentuan role yang AMAN:
+    // Hanya berikan 'admin' jika backend secara eksplisit menyatakan role admin ATAU
+    // email cocok eksak dengan daftar email resmi admin terdaftar (bukan substring .includes).
     const role =
-      rawUser.role === "admin" || email.toLowerCase().includes("admin")
+      rawUser.role === "admin" || ADMIN_WHITELIST.includes(email)
         ? "admin"
         : "user";
-    const user = { ...rawUser, role, email: rawUser.email || email };
+
+    const user = {
+      ...rawUser,
+      id: rawUser.id || rawUser.user_id,
+      role,
+      email: rawUser.email || email,
+    };
 
     const expiresIn =
       data.data?.expires_in || data.expires_in || 60 * 60 * 24 * 7;
 
-    const cookieStore = await cookies();
-    cookieStore.set("session_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+    // Simpan sesi terenkripsi (AES-256-GCM) dalam httpOnly cookie
+    await saveSession({
+      token,
+      user,
       maxAge: expiresIn,
-      path: "/",
     });
 
-    cookieStore.set("user_profile", JSON.stringify(user), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
-
+    // Kembalikan profil tampilan yang aman ke client (TANPA membocorkan token Bearer mentah)
     return {
       success: true,
-      user,
-      token,
-      apiKey:
-        data.data?.api_key ||
-        data.api_key ||
-        process.env.NEXT_PUBLIC_API_KEY,
+      user: {
+        id: user.id,
+        name: user.name || "Pengguna",
+        email: user.email,
+        role: user.role,
+        whatsapp: user.whatsapp || "",
+      },
       message: data.message || "Login berhasil.",
     };
   } catch (err) {
+    let errorMsg = err.message || "Gagal menghubungi server database.";
+    if (errorMsg.includes("401") || errorMsg.toLowerCase().includes("unauthorized")) {
+      errorMsg = "Email atau kata sandi yang Anda masukkan salah.";
+    }
     return {
       success: false,
-      error: err.message || "Terjadi kesalahan saat menghubungi server.",
+      error: errorMsg,
     };
   }
 }
@@ -94,31 +104,38 @@ export async function registerAction(payload) {
       return { success: false, error: "Email dan kata sandi wajib diisi." };
     }
 
+    if (password.length < 6) {
+      return { success: false, error: "Kata sandi minimal 6 karakter." };
+    }
+
     const regData = await authRegister({ name, email, password });
 
     if (!regData.success) {
       return { success: false, error: regData.message || "Registrasi gagal." };
     }
 
-    // Auto-login setelah registrasi berhasil
+    // Coba auto-login setelah pendaftaran berhasil
     const loginResult = await loginAction({ email, password });
     if (loginResult.success) {
       return {
         success: true,
+        autoLogin: true,
         user: loginResult.user,
         message: "Pendaftaran dan login berhasil!",
       };
     }
 
+    // Jika registrasi berhasil namun auto-login tertunda/gagal
     return {
       success: true,
+      autoLogin: false,
       user: regData.data?.user || regData.user,
-      message: regData.message || "Pendaftaran akun berhasil. Silakan masuk.",
+      message: regData.message || "Pendaftaran akun berhasil. Silakan masuk dengan akun baru Anda.",
     };
   } catch (err) {
     return {
       success: false,
-      error: err.message || "Terjadi kesalahan saat registrasi.",
+      error: err.message || "Terjadi kesalahan saat registrasi akun.",
     };
   }
 }
@@ -128,15 +145,14 @@ export async function registerAction(payload) {
  */
 export async function logoutAction() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("session_token")?.value;
+    const { token } = await getCurrentSession();
 
     if (token) {
       await authLogout(token).catch(() => {});
     }
 
-    cookieStore.delete("session_token");
-    cookieStore.delete("user_profile");
+    // Hapus seluruh cookie sesi secara permanen
+    await destroySession();
 
     return { success: true, message: "Berhasil keluar." };
   } catch (err) {
@@ -149,16 +165,19 @@ export async function logoutAction() {
  */
 export async function getMeAction() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("session_token")?.value;
+    const { token, user } = await getCurrentSession();
 
     if (!token) {
       return { success: false, error: "Belum ada sesi aktif (token tidak ditemukan)." };
     }
 
-    const data = await authMe(token);
-    const userProfile = data.data?.session || data.data || data.user || data;
-    return { success: true, data: userProfile };
+    const data = await authMe(token).catch(() => null);
+    const backendProfile = data?.data?.session || data?.data || data?.user || null;
+
+    return {
+      success: true,
+      data: backendProfile || user,
+    };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -169,8 +188,7 @@ export async function getMeAction() {
  */
 export async function getKeyAction() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("session_token")?.value;
+    const { token, isAdmin } = await getCurrentSession();
 
     if (!token) {
       return { success: false, error: "Akses ditolak: Memerlukan login untuk mendapatkan API Key." };
@@ -183,4 +201,3 @@ export async function getKeyAction() {
     return { success: false, error: err.message };
   }
 }
-
