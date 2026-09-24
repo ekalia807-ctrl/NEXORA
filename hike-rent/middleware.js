@@ -1,49 +1,35 @@
 import { NextResponse } from "next/server";
-import { decryptData } from "@/lib/crypto";
 
-export async function middleware(request) {
+export function middleware(request) {
   const { pathname, search } = request.nextUrl;
 
   const sessionToken = request.cookies.get("session_token")?.value;
-  const encryptedUser = request.cookies.get("session_user")?.value;
-  const legacyUserProfile = request.cookies.get("user_profile")?.value;
+  const rawUser = request.cookies.get("session_user")?.value;
 
   let user = null;
-  if (sessionToken && encryptedUser) {
-    user = await decryptData(encryptedUser);
-  }
-
-  // Fallback migrasi jika user masih membawa cookie plaintext lama
-  if (!user && sessionToken && legacyUserProfile) {
+  if (rawUser) {
     try {
-      user = JSON.parse(legacyUserProfile);
+      user = JSON.parse(rawUser);
     } catch {}
   }
 
   const isAuthenticated = Boolean(sessionToken && user);
-  const role = user?.role || "user";
-  const isAdmin = role === "admin";
+  const isAdmin = user?.role === "admin";
 
-  const isAccessingAdmin = pathname.startsWith("/admin");
-  const isAccessingUser = pathname.startsWith("/user");
-  const isAccessingAuth = pathname === "/login" || pathname === "/register";
-
-  // 1. Proteksi Area Admin (/admin/*)
-  if (isAccessingAdmin) {
+  // 1. Proteksi Halaman Admin
+  if (pathname.startsWith("/admin")) {
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", `${pathname}${search}`);
       return NextResponse.redirect(loginUrl);
     }
-
     if (!isAdmin) {
-      // Pengguna login tapi bukan admin, arahkan ke dashboard user
       return NextResponse.redirect(new URL("/user/dashboard", request.url));
     }
   }
 
-  // 2. Proteksi Area User (/user/*)
-  if (isAccessingUser) {
+  // 2. Proteksi Halaman User
+  if (pathname.startsWith("/user")) {
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", `${pathname}${search}`);
@@ -51,20 +37,15 @@ export async function middleware(request) {
     }
   }
 
-  // 3. Halaman Login & Register: jika sudah login, lempar langsung ke dashboard
-  if (isAccessingAuth && isAuthenticated) {
-    const targetDashboard = isAdmin ? "/admin/dashboard" : "/user/dashboard";
-    return NextResponse.redirect(new URL(targetDashboard, request.url));
+  // 3. Jika sudah login, cegah buka halaman login / register lagi
+  if ((pathname === "/login" || pathname === "/register") && isAuthenticated) {
+    const target = isAdmin ? "/admin/dashboard" : "/user/dashboard";
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/user/:path*",
-    "/login",
-    "/register",
-  ],
+  matcher: ["/admin/:path*", "/user/:path*", "/login", "/register"],
 };
