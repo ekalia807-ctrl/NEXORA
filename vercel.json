@@ -1,5 +1,0 @@
-{
-  "buildCommand": "cd hike-rent && npm run build",
-  "outputDirectory": "hike-rent/.next",
-  "installCommand": "cd hike-rent && npm install"
-}
