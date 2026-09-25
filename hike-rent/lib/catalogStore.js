@@ -63,6 +63,12 @@ export function normalizeBackendGear(g) {
     availableStock: Number(g.available_stock ?? g.total_stock ?? 5),
     provider: g.provider || "Basecamp NEXORA",
     note: g.note || g.description || "",
+    // TODO: Ganti dengan hitungan asli dari riwayat peminjaman (rentals/rental_items) begitu backend API analitik tersedia.
+    timesBorrowed: Number(
+      g.times_borrowed ??
+      g.timesBorrowed ??
+      (Math.abs(String(g.name || g.id || "gear").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 40 + 12)
+    ),
     image: image,
     imageUrl: image,
   };
@@ -80,6 +86,11 @@ function readAll() {
       const normalizedImg = normalizeGearImage(rawImg);
       return {
         ...item,
+        // TODO: Ganti dengan hitungan asli dari riwayat peminjaman (rentals/rental_items) begitu backend API analitik tersedia.
+        timesBorrowed: Number(
+          item.timesBorrowed ??
+          (Math.abs(String(item.name || item.id || "gear").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 40 + 12)
+        ),
         image: normalizedImg,
         imageUrl: normalizedImg,
       };

@@ -106,24 +106,33 @@ function KalkulatorContent() {
   }
 
   return (
-    <div className="border border-line bg-white/40 p-6 print:border-black/20 print:bg-white">
-      <h1 className="font-display text-2xl font-bold text-ink print:text-black">
-        Kalkulator Biaya Sewa
-      </h1>
-      <p className="mt-2 text-sm text-ink/65 print:text-black">
-        {isPaketMode
-          ? "Estimasi biaya untuk paket rekomendasi yang kamu pilih."
-          : "Pilih alat dan tanggal sewa untuk melihat estimasi biaya."}
-      </p>
+    <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md print:border-black/20 print:bg-white space-y-6">
+      <div className="border-b border-line/60 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
+            Estimasi Biaya
+          </span>
+          <span className="h-1 w-1 rounded-full bg-ink/30" />
+          <span className="font-mono text-[11px] text-ink/50">Kalkulator Sewa</span>
+        </div>
+        <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink print:text-black">
+          Kalkulator Biaya Sewa
+        </h1>
+        <p className="mt-1.5 text-sm text-ink/65 print:text-black">
+          {isPaketMode
+            ? "Estimasi biaya untuk paket rekomendasi rombongan yang kamu pilih."
+            : "Pilih alat, jumlah unit, dan tanggal sewa untuk menghitung estimasi biaya secara otomatis."}
+        </p>
+      </div>
 
       {!isPaketMode && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm text-ink/70 print:text-black">
-            Alat
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70 print:text-black">
+            Peralatan Sewa
             <select
               value={activeAlatId}
               onChange={(e) => setAlatId(e.target.value)}
-              className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-ink outline-none focus:border-ridge"
+              className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white"
             >
               {gear.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -245,15 +254,14 @@ function KalkulatorContent() {
 
 export default function KalkulatorPage() {
   return (
-    <RequireAuth allow={["user"]}>
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10 sm:px-8 lg:flex-row">
-        <DashboardSidebar />
-        <main className="min-w-0 flex-1">
-          <Suspense fallback={null}>
-            <KalkulatorContent />
-          </Suspense>
-        </main>
-      </div>
-    </RequireAuth>
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-line bg-white/70 p-12 text-center text-sm text-ink/50 font-mono">
+          Memuat kalkulator biaya...
+        </div>
+      }
+    >
+      <KalkulatorContent />
+    </Suspense>
   );
 }

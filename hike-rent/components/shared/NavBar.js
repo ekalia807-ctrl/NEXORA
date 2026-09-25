@@ -34,6 +34,7 @@ const menuUser = [
   { href: "/user/dashboard", label: "Ringkasan" },
   { href: "/user/dashboard/profil", label: "Profil Saya" },
   { href: "/user/katalog", label: "Katalog Alat" },
+  { href: "/user/wishlist", label: "Wishlist Saya" },
   { href: "/user/kalkulator", label: "Kalkulator Biaya" },
   { href: "/user/checkout", label: "Checkout Sewa" },
   { href: "/user/riwayat", label: "Riwayat & Status" },
