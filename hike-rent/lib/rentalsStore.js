@@ -23,17 +23,31 @@ export function normalizeRental(r) {
   // Normalisasi status
   let normStatus = r.status || "Menunggu verifikasi";
   if (normStatus === "diajukan") normStatus = "Menunggu verifikasi";
-  if (normStatus === "diverifikasi") normStatus = "Aktif";
-  if (normStatus === "selesai") normStatus = "Selesai";
-  if (normStatus === "ditolak") normStatus = "Ditolak";
+  if (normStatus === "diverifikasi" || normStatus === "Aktif") normStatus = "Disetujui";
+  if (normStatus === "diambil") normStatus = "Diambil";
+  if (normStatus === "selesai" || normStatus === "dikembalikan") normStatus = "Selesai";
+  if (normStatus === "ditolak" || normStatus === "dibatalkan") normStatus = "Ditolak";
 
-  // Hitung step saat ini untuk progress tracker
+  // Hitung step saat ini untuk progress tracker 4 tahap
   let currentStep = 0;
   if (normStatus === "Menunggu verifikasi") currentStep = 0;
-  else if (normStatus === "Aktif") currentStep = 1;
+  else if (normStatus === "Disetujui") currentStep = 1;
   else if (normStatus === "Diambil") currentStep = 2;
   else if (normStatus === "Selesai") currentStep = 3;
   else if (normStatus === "Ditolak") currentStep = 0;
+
+  // Status pembayaran
+  const paymentProof = r.payment_proof || r.paymentProof || "";
+  let paymentStatus = r.payment_status || r.paymentStatus || "";
+  if (!paymentStatus) {
+    if (normStatus === "Menunggu verifikasi" || normStatus === "Ditolak") {
+      paymentStatus = "belum_tersedia";
+    } else if (normStatus === "Disetujui") {
+      paymentStatus = paymentProof ? "menunggu_verifikasi" : "menunggu_pembayaran";
+    } else if (normStatus === "Diambil" || normStatus === "Selesai") {
+      paymentStatus = "terverifikasi";
+    }
+  }
 
   return {
     id: formattedId,
@@ -53,10 +67,16 @@ export function normalizeRental(r) {
     total: Number(r.total_price ?? r.total ?? 0),
     total_price: Number(r.total_price ?? r.total ?? 0),
     status: normStatus,
-    steps: ["Diajukan", "Diverifikasi", "Diambil", "Dikembalikan"],
+    steps: ["Diajukan", "Disetujui", "Diambil", "Dikembalikan"],
     currentStep: currentStep,
     note: r.note || "",
     ktp_number: r.ktp_number || "",
+    payment_status: paymentStatus,
+    payment_method: r.payment_method || r.paymentMethod || "",
+    payment_proof: paymentProof,
+    payment_date: r.payment_date || r.paymentDate || "",
+    payment_notes: r.payment_notes || "",
+    status_logs: Array.isArray(r.status_logs) ? r.status_logs : [],
     created_at: r.created_at || r.createdAt || new Date().toISOString(),
   };
 }
@@ -94,24 +114,40 @@ export function addRental(rental) {
   return next;
 }
 
-export function updateRentalStatus(id, newStatus, extraPatch = {}) {
+export function updateRentalStatus(id, newStatus, extraPatch = {}, auditEntry = null) {
   const current = readAll();
   const next = current.map((r) => {
     if (r.id === id || String(r.backendId) === String(id)) {
       let currentStep = 0;
       if (newStatus === "Menunggu verifikasi" || newStatus === "diajukan") currentStep = 0;
-      else if (newStatus === "Aktif" || newStatus === "diverifikasi" || newStatus === "Disetujui") currentStep = 1;
-      else if (newStatus === "Diambil") currentStep = 2;
-      else if (newStatus === "Selesai") currentStep = 3;
+      else if (newStatus === "Disetujui" || newStatus === "diverifikasi" || newStatus === "Aktif") currentStep = 1;
+      else if (newStatus === "Diambil" || newStatus === "diambil") currentStep = 2;
+      else if (newStatus === "Selesai" || newStatus === "selesai" || newStatus === "dikembalikan") currentStep = 3;
+      else if (newStatus === "Ditolak" || newStatus === "ditolak") currentStep = 0;
 
       let displayStatus = newStatus;
-      if (newStatus === "Disetujui" || newStatus === "diverifikasi") displayStatus = "Aktif";
+      if (newStatus === "diverifikasi" || newStatus === "Aktif") displayStatus = "Disetujui";
       if (newStatus === "diajukan") displayStatus = "Menunggu verifikasi";
+      if (newStatus === "selesai" || newStatus === "dikembalikan") displayStatus = "Selesai";
+
+      const existingLogs = Array.isArray(r.status_logs) ? r.status_logs : [];
+      const updatedLogs = auditEntry
+        ? [
+            ...existingLogs,
+            {
+              status: displayStatus,
+              notes: auditEntry.notes || `Perubahan status ke ${displayStatus}`,
+              changed_by: auditEntry.changed_by || "Admin",
+              created_at: new Date().toISOString(),
+            },
+          ]
+        : existingLogs;
 
       return {
         ...r,
         status: displayStatus,
         currentStep: currentStep,
+        status_logs: updatedLogs,
         ...extraPatch,
       };
     }
@@ -196,8 +232,11 @@ export function useRentalsSync() {
 }
 
 export const statusStyle = {
+  Disetujui: "bg-moss text-fog",
   Aktif: "bg-moss text-fog",
   "Menunggu verifikasi": "bg-amber text-ink",
-  Selesai: "bg-line text-ink/60",
+  Diambil: "bg-ridge text-amber",
+  Selesai: "bg-line text-ink/70",
   Ditolak: "bg-alert text-fog",
+  Dibatalkan: "bg-alert text-fog",
 };

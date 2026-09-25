@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+:root {
+  --font-space-grotesk: "Space Grotesk", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-jbmono: "JetBrains Mono", monospace;
+}
+
 @theme {
   --color-ridge: #1C2620;
   --color-fog: #E9EAE3;

@@ -11,6 +11,7 @@ const menuUser = [
   { href: "/user/dashboard", label: "Ringkasan" },
   { href: "/user/dashboard/profil", label: "Profil Saya" },
   { href: "/user/katalog", label: "Katalog Alat" },
+  { href: "/user/wishlist", label: "Wishlist Saya" },
   { href: "/user/kalkulator", label: "Kalkulator Biaya" },
   { href: "/user/checkout", label: "Checkout Sewa" },
   { href: "/user/riwayat", label: "Riwayat & Status" },
@@ -34,31 +35,31 @@ export default function DashboardSidebar() {
   }
 
   return (
-    <aside className="h-fit w-full shrink-0 border border-line bg-white/40 lg:sticky lg:top-24 lg:w-64">
+    <aside className="h-fit w-full shrink-0 rounded-2xl border border-line bg-white/70 shadow-sm backdrop-blur-md lg:sticky lg:top-24 lg:w-64 overflow-hidden">
       {/* Header — jadi tombol toggle di layar mobile */}
       <div className="flex items-center justify-between border-b border-line px-5 py-4 lg:block">
         <div>
           <span className="font-mono text-[11px] uppercase tracking-wide text-ink/50">
             Masuk sebagai: <span className="font-bold text-ink capitalize">{role || "Peminjam"}</span>
           </span>
-          <h2 className="mt-0.5 font-display text-lg font-semibold text-ink">
+          <h2 className="mt-0.5 font-display text-lg font-bold text-ink">
             Panel Pengguna
           </h2>
         </div>
 
         <button
-          className="lg:hidden"
+          className="lg:hidden p-2 rounded-lg text-ink/70 hover:bg-paper transition-colors"
           aria-label="Buka menu user"
           onClick={() => setOpen(!open)}
         >
-          <span className="block h-0.5 w-6 bg-ink" />
-          <span className="mt-1.5 block h-0.5 w-6 bg-ink" />
-          <span className="mt-1.5 block h-0.5 w-4 bg-ink" />
+          <span className="block h-0.5 w-5 bg-ink" />
+          <span className="mt-1.5 block h-0.5 w-5 bg-ink" />
+          <span className="mt-1.5 block h-0.5 w-3.5 bg-ink" />
         </button>
       </div>
 
       {/* Navigasi Panel User */}
-      <nav className={`${open ? "flex" : "hidden"} flex-col gap-1 px-3 py-4 lg:flex`}>
+      <nav className={`${open ? "flex" : "hidden"} flex-col gap-1 p-3 lg:flex`}>
         {menuUser.map((item) => {
           const active =
             item.href === "/user/dashboard"
@@ -70,10 +71,10 @@ export default function DashboardSidebar() {
               key={item.href}
               href={item.href}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm transition-colors ${
+              className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${
                 active
-                  ? "bg-ridge text-fog font-medium"
-                  : "text-ink/70 hover:bg-paper hover:text-ink"
+                  ? "bg-ridge text-fog shadow-sm"
+                  : "text-ink/70 hover:bg-paper/80 hover:text-ink"
               }`}
             >
               {item.label}
@@ -83,10 +84,10 @@ export default function DashboardSidebar() {
       </nav>
 
       {/* Logout */}
-      <div className={`${open ? "block" : "hidden"} border-t border-line px-3 py-3 lg:block`}>
+      <div className={`${open ? "block" : "hidden"} border-t border-line/60 p-3 lg:block`}>
         <button
           onClick={handleLogout}
-          className="w-full rounded-sm border border-line px-3 py-2.5 text-left text-sm text-ink/70 hover:border-alert hover:text-alert transition-colors"
+          className="w-full rounded-xl border border-line bg-paper/40 px-3.5 py-2.5 text-left text-sm font-medium text-ink/70 hover:border-alert/40 hover:bg-alert/10 hover:text-alert transition-all duration-200"
         >
           Keluar
         </button>
