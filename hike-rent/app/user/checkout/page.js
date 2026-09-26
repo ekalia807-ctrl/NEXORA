@@ -10,58 +10,87 @@ import { addRental } from "@/lib/rentalsStore";
 
 function validateName(val) {
   const clean = (val || "").trim();
+
   if (!clean) {
     return {
       isValid: false,
       message: "Lengkapi nama lengkap sesuai KTP dulu ya.",
     };
   }
+
   if (clean.length < 3) {
     return {
       isValid: false,
       message: "Nama lengkap minimal 3 karakter ya.",
     };
   }
+
   return { isValid: true, clean };
 }
 
+// WA boleh kosong saat mengisi form.
+// Tetapi jika diisi, harus berupa angka dan format nomor Indonesia.
 function validatePhone(phone) {
-  const clean = (phone || "").trim().replace(/\D/g, "");
+  const clean = (phone || "").trim();
+
+  // Nomor WhatsApp bersifat opsional saat mengisi form.
   if (!clean) {
     return {
-      isValid: false,
-      message: "Lengkapi nomor telepon dulu ya, biar admin bisa hubungi kamu.",
+      isValid: true,
+      clean: "",
+      isEmpty: true,
     };
   }
-  // Nomor telepon seluler Indonesia berawalan 08 atau 628 dengan panjang 10–14 digit angka
+
+  // Harus hanya berisi angka.
+  if (!/^[0-9]+$/.test(clean)) {
+    return {
+      isValid: false,
+      message: "Nomor WhatsApp hanya boleh berisi angka ya.",
+    };
+  }
+
+  // Nomor telepon seluler Indonesia berawalan 08 atau 628.
   const isIndo = /^(?:628|08)[0-9]{8,12}$/.test(clean);
+
   if (!isIndo) {
     return {
       isValid: false,
-      message: "Format nomor telepon belum valid. Gunakan awalan 08 atau 628 (10–14 digit angka) ya.",
+      message:
+        "Format nomor WhatsApp belum valid. Gunakan awalan 08 atau 628 (10–15 digit angka) ya.",
     };
   }
-  return { isValid: true, clean };
+
+  return {
+    isValid: true,
+    clean,
+    isEmpty: false,
+  };
 }
 
 function validateKtp(file) {
   if (!file) {
     return {
       isValid: false,
-      message: "Silakan unggah foto KTP terlebih dahulu ya, untuk verifikasi peminjaman.",
+      message:
+        "Silakan unggah foto KTP terlebih dahulu ya, untuk verifikasi peminjaman.",
     };
   }
+
   if (file.type && !file.type.startsWith("image/")) {
     return {
       isValid: false,
-      message: "Format foto KTP harus berupa file gambar (JPG, PNG, atau WebP) ya.",
+      message:
+        "Format foto KTP harus berupa file gambar (JPG, PNG, atau WebP) ya.",
     };
   }
+
   return { isValid: true };
 }
 
 function CheckoutForm() {
   const [submitted, setSubmitted] = useState(false);
+
   const [name, setName] = useState(() => {
     if (typeof window !== "undefined") {
       try {
@@ -69,6 +98,7 @@ function CheckoutForm() {
         return u.name || "";
       } catch (e) {}
     }
+
     return "";
   });
 
@@ -77,10 +107,11 @@ function CheckoutForm() {
       try {
         const u = JSON.parse(localStorage.getItem("user") || "{}");
         const raw = u.whatsapp || u.phone || "";
-        // Sanitasi ke karakter numerik saja, tetap sebagai string agar angka 0 di depan terjaga
-        return String(raw).replace(/\D/g, "");
+
+        return String(raw).replace(/\D/g, "").slice(0, 15);
       } catch (e) {}
     }
+
     return "";
   });
 
@@ -100,17 +131,23 @@ function CheckoutForm() {
 
   function handleNameChange(e) {
     const val = e.target.value;
+
     setName(val);
+
     if (errors.name) {
       const check = validateName(val);
+
       if (check.isValid) {
-        setErrors((prev) => ({ ...prev, name: "" }));
+        setErrors((prev) => ({
+          ...prev,
+          name: "",
+        }));
       }
     }
   }
 
   function handleWhatsappKeyDown(e) {
-    // Izinkan tombol kontrol/navigasi & shortcut clipboard
+    // Izinkan tombol kontrol/navigasi dan shortcut keyboard.
     if (
       [
         "Backspace",
@@ -125,130 +162,232 @@ function CheckoutForm() {
         "Home",
         "End",
       ].includes(e.key) ||
-      ((e.ctrlKey || e.metaKey) && ["a", "c", "v", "x", "z"].includes(e.key.toLowerCase()))
+      ((e.ctrlKey || e.metaKey) &&
+        ["a", "c", "v", "x", "z"].includes(e.key.toLowerCase()))
     ) {
       return;
     }
 
-    // Cegah semua karakter selain angka 0-9
+    // Tolak karakter selain angka 0-9.
     if (!/^[0-9]$/.test(e.key)) {
       e.preventDefault();
+
+      setErrors((prev) => ({
+        ...prev,
+        whatsapp: "Nomor WhatsApp hanya boleh berisi angka ya.",
+      }));
     }
   }
 
   function handleWhatsappPaste(e) {
     e.preventDefault();
+
     const pasted = e.clipboardData.getData("text") || "";
-    // Hanya ambil karakter angka
-    const digitsOnly = pasted.replace(/\D/g, "");
-    if (digitsOnly) {
-      const input = e.target;
-      const start = input.selectionStart || 0;
-      const end = input.selectionEnd || 0;
-      const currentVal = whatsapp;
-      const nextVal = (currentVal.slice(0, start) + digitsOnly + currentVal.slice(end)).slice(0, 15);
-      setWhatsapp(nextVal);
-      if (errors.whatsapp) {
-        const check = validatePhone(nextVal);
-        if (check.isValid) {
-          setErrors((prev) => ({ ...prev, whatsapp: "" }));
-        }
+
+    // Jika hasil paste mengandung karakter selain angka,
+    // jangan langsung menghapusnya. Tampilkan warning.
+    if (!/^[0-9]*$/.test(pasted)) {
+      setErrors((prev) => ({
+        ...prev,
+        whatsapp: "Nomor WhatsApp hanya boleh berisi angka ya.",
+      }));
+      return;
+    }
+
+    const input = e.target;
+    const start = input.selectionStart || 0;
+    const end = input.selectionEnd || 0;
+
+    const nextVal = (
+      whatsapp.slice(0, start) +
+      pasted +
+      whatsapp.slice(end)
+    ).slice(0, 15);
+
+    setWhatsapp(nextVal);
+
+    if (errors.whatsapp) {
+      const check = validatePhone(nextVal);
+
+      if (check.isValid) {
+        setErrors((prev) => ({
+          ...prev,
+          whatsapp: "",
+        }));
       }
     }
   }
 
   function handleWhatsappChange(e) {
     const rawVal = e.target.value;
-    // Saring dan tolak karakter non-angka, simpan tetap sebagai string agar angka 0 depan tidak hilang
+
+    // Input hanya menyimpan angka.
+    // Batas maksimal 15 digit.
     const digitsOnly = rawVal.replace(/\D/g, "").slice(0, 15);
+
     setWhatsapp(digitsOnly);
 
     if (errors.whatsapp) {
       const check = validatePhone(digitsOnly);
+
+      // Kosong juga valid saat sedang mengisi form.
       if (check.isValid) {
-        setErrors((prev) => ({ ...prev, whatsapp: "" }));
+        setErrors((prev) => ({
+          ...prev,
+          whatsapp: "",
+        }));
       }
     }
   }
 
   function handleWhatsappBlur() {
-    if (whatsapp.trim()) {
-      const check = validatePhone(whatsapp);
-      if (!check.isValid) {
-        setErrors((prev) => ({ ...prev, whatsapp: check.message }));
-      } else {
-        setErrors((prev) => ({ ...prev, whatsapp: "" }));
-      }
+    // Kalau kosong, tidak perlu warning karena WA bersifat opsional
+    // saat mengisi form.
+    if (!whatsapp.trim()) {
+      setErrors((prev) => ({
+        ...prev,
+        whatsapp: "",
+      }));
+
+      return;
+    }
+
+    const check = validatePhone(whatsapp);
+
+    if (!check.isValid) {
+      setErrors((prev) => ({
+        ...prev,
+        whatsapp: check.message,
+      }));
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        whatsapp: "",
+      }));
     }
   }
 
   function handleKtpChange(e) {
     const file = e.target.files?.[0];
+
     if (!file) {
       setKtp(null);
       setKtpPreview("");
       return;
     }
+
     const check = validateKtp(file);
+
     if (!check.isValid) {
       setKtp(null);
       setKtpPreview("");
-      setErrors((prev) => ({ ...prev, ktp: check.message }));
+
+      setErrors((prev) => ({
+        ...prev,
+        ktp: check.message,
+      }));
+
       return;
     }
+
     setKtp(file);
+
     const preview = URL.createObjectURL(file);
     setKtpPreview(preview);
-    setErrors((prev) => ({ ...prev, ktp: "" }));
+
+    setErrors((prev) => ({
+      ...prev,
+      ktp: "",
+    }));
   }
 
   function handleRemoveKtp() {
     setKtp(null);
     setKtpPreview("");
+
     if (ktpInputRef.current) {
       ktpInputRef.current.value = "";
     }
+
+    // Setelah KTP dihapus, error tidak langsung ditampilkan.
+    // Error akan muncul ketika user menekan Ajukan Sewa.
+    setErrors((prev) => ({
+      ...prev,
+      ktp: "",
+    }));
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
 
-    // 1. Validasi titik SUBMIT (Jaring pengaman utama)
+    // ==========================================
+    // VALIDASI SAAT USER MENEKAN AJUKAN SEWA
+    // ==========================================
+
     const newErrors = {};
 
+    // Nama wajib.
     const nameCheck = validateName(name);
+
     if (!nameCheck.isValid) {
       newErrors.name = nameCheck.message;
     }
 
+    // WA:
+    // - boleh kosong saat mengisi form
+    // - tetapi WA wajib ketika user mengajukan sewa
     const phoneCheck = validatePhone(whatsapp);
-    if (!phoneCheck.isValid) {
+
+    if (!whatsapp.trim()) {
+      newErrors.whatsapp =
+        "Lengkapi nomor WhatsApp terlebih dahulu sebelum mengajukan sewa ya.";
+    } else if (!phoneCheck.isValid) {
       newErrors.whatsapp = phoneCheck.message;
     }
 
+    // KTP wajib ketika mengajukan sewa.
     const ktpCheck = validateKtp(ktp);
+
     if (!ktpCheck.isValid) {
       newErrors.ktp = ktpCheck.message;
     }
 
+    // Tampilkan semua error.
     setErrors(newErrors);
 
-    // 2. Jika ada field yang tidak valid / kosong: hentikan submit, stay di halaman, fokus ke field error pertama
+    // ==========================================
+    // JIKA ADA ERROR → STAY DI HALAMAN CHECKOUT
+    // ==========================================
+
     if (Object.keys(newErrors).length > 0) {
       if (newErrors.name && nameInputRef.current) {
-        nameInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        nameInputRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
         nameInputRef.current.focus();
       } else if (newErrors.whatsapp && whatsappInputRef.current) {
-        whatsappInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        whatsappInputRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
         whatsappInputRef.current.focus();
       } else if (newErrors.ktp && ktpInputRef.current) {
-        ktpInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-        ktpInputRef.current.focus();
+        ktpInputRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
+
       return;
     }
 
-    // 3. Jika SEMUA field wajib sudah lengkap dan valid, baru lanjutkan proses submit
+    // ==========================================
+    // SEMUA DATA LENGKAP → LANJUT SUBMIT
+    // ==========================================
+
     setLoading(true);
 
     const diffDays = Math.max(
@@ -258,6 +397,7 @@ function CheckoutForm() {
           (1000 * 60 * 60 * 24)
       )
     );
+
     const estimatedPrice = diffDays * 50000;
 
     const payload = {
@@ -271,16 +411,21 @@ function CheckoutForm() {
     };
 
     let backendResult = null;
+
     try {
       const res = await createRentalAction(payload);
+
       if (res && res.success && res.data) {
         backendResult = res.data;
       }
     } catch (err) {
-      console.warn("Backend rental creation deferred to local sync:", err.message);
+      console.warn(
+        "Backend rental creation deferred to local sync:",
+        err.message
+      );
     }
 
-    // Rekam ke rental store client-side
+    // Rekam ke rental store client-side.
     addRental({
       id: backendResult?.id ? String(backendResult.id) : undefined,
       backendId: backendResult?.id || null,
@@ -305,7 +450,7 @@ function CheckoutForm() {
 
   if (submitted) {
     return (
-      <div className="rounded-2xl border border-line bg-white/70 p-8 text-center sm:p-12 shadow-sm backdrop-blur-md">
+      <div className="rounded-2xl border border-line bg-white/70 p-8 text-center shadow-sm backdrop-blur-md sm:p-12">
         <span
           className="status-dot bg-moss mx-auto block"
           style={{ width: 16, height: 16 }}
@@ -315,40 +460,51 @@ function CheckoutForm() {
           Pengajuan Sewa Berhasil Dikirim!
         </h1>
 
-        <p className="mx-auto mt-3 max-w-md text-sm text-ink/65 leading-relaxed">
-          Pengajuan sewa peralatan pendakian kamu telah tercatat. Tim admin NEXORA akan segera meninjau permohonanmu. Setelah disetujui, kamu dapat langsung melanjutkan ke pembayaran.
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink/65">
+          Pengajuan sewa peralatan pendakian kamu telah tercatat. Tim admin
+          NEXORA akan segera meninjau permohonanmu. Setelah disetujui, kamu
+          dapat langsung melanjutkan ke pembayaran.
         </p>
 
-        {/* Ringkasan Konfirmasi Data Peminjaman */}
-        <div className="mx-auto mt-6 max-w-sm rounded-xl border border-line bg-paper/60 p-4 text-left text-xs text-ink/80 space-y-2 shadow-sm">
+        <div className="mx-auto mt-6 max-w-sm space-y-2 rounded-xl border border-line bg-paper/60 p-4 text-left text-xs text-ink/80 shadow-sm">
           <div className="flex justify-between border-b border-line/40 pb-1.5">
             <span className="text-ink/50">Nama Peminjam:</span>
             <span className="font-semibold text-ink">{name}</span>
           </div>
+
           <div className="flex justify-between border-b border-line/40 pb-1.5">
             <span className="text-ink/50">Nomor WhatsApp:</span>
-            <span className="font-mono font-semibold text-ink">{whatsapp}</span>
+            <span className="font-mono font-semibold text-ink">
+              {whatsapp}
+            </span>
           </div>
+
           <div className="flex justify-between border-b border-line/40 pb-1.5">
             <span className="text-ink/50">Peralatan:</span>
-            <span className="font-medium text-ink">{alat || "Peralatan Pendakian"}</span>
+            <span className="font-medium text-ink">
+              {alat || "Peralatan Pendakian"}
+            </span>
           </div>
+
           <div className="flex justify-between pt-0.5">
             <span className="text-ink/50">Periode Sewa:</span>
-            <span className="font-medium text-ink">{startDate} s/d {endDate}</span>
+            <span className="font-medium text-ink">
+              {startDate} s/d {endDate}
+            </span>
           </div>
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/user/riwayat"
-            className="rounded-xl bg-ridge px-6 py-2.5 text-xs font-semibold text-fog hover:bg-ink transition-all shadow-sm"
+            className="rounded-xl bg-ridge px-6 py-2.5 text-xs font-semibold text-fog shadow-sm transition-all hover:bg-ink"
           >
             Lihat Status di Riwayat →
           </Link>
+
           <Link
             href="/user/katalog"
-            className="rounded-xl border border-line bg-paper/60 px-5 py-2.5 text-xs font-semibold text-ink hover:bg-paper transition-all"
+            className="rounded-xl border border-line bg-paper/60 px-5 py-2.5 text-xs font-semibold text-ink transition-all hover:bg-paper"
           >
             Kembali ke Katalog
           </Link>
@@ -359,21 +515,28 @@ function CheckoutForm() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
+      <div className="rounded-2xl border border-line bg-white/70 p-6 shadow-sm backdrop-blur-md sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
+              <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-amber">
                 Langkah Transaksi
               </span>
+
               <span className="h-1 w-1 rounded-full bg-ink/30" />
-              <span className="font-mono text-[11px] text-ink/50">Formulir Sewa</span>
+
+              <span className="font-mono text-[11px] text-ink/50">
+                Formulir Sewa
+              </span>
             </div>
-            <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+
+            <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
               Checkout Pengajuan Sewa
             </h1>
+
             <p className="mt-1.5 text-sm text-ink/65">
-              Lengkapi data peminjaman dan konfirmasi perlengkapan yang ingin kamu sewa sebelum diproses oleh penyedia.
+              Lengkapi data peminjaman dan konfirmasi perlengkapan yang ingin
+              kamu sewa sebelum diproses oleh penyedia.
             </p>
           </div>
 
@@ -383,12 +546,13 @@ function CheckoutForm() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-line bg-white/80 p-6 sm:p-8 shadow-sm backdrop-blur-sm max-w-2xl mx-auto">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-line bg-white/80 p-6 shadow-sm backdrop-blur-sm sm:p-8">
         <form noValidate onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
               Alat yang Dipilih
             </label>
+
             <input
               type="text"
               readOnly
@@ -397,11 +561,12 @@ function CheckoutForm() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
                 Tanggal Mulai Sewa
               </label>
+
               <input
                 type="date"
                 required
@@ -410,10 +575,12 @@ function CheckoutForm() {
                 className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
                 Tanggal Selesai Sewa
               </label>
+
               <input
                 type="date"
                 required
@@ -425,9 +592,13 @@ function CheckoutForm() {
           </div>
 
           <div>
-            <label htmlFor="checkout-name" className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+            <label
+              htmlFor="checkout-name"
+              className="block text-xs font-semibold uppercase tracking-wide text-ink/70"
+            >
               Nama Lengkap
             </label>
+
             <input
               ref={nameInputRef}
               id="checkout-name"
@@ -444,20 +615,40 @@ function CheckoutForm() {
                   : "border-line bg-paper/60 focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
               }`}
             />
+
             {errors.name && (
-              <p id="name-error" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert">
-                <svg className="h-3.5 w-3.5 shrink-0 text-alert" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <p
+                id="name-error"
+                className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert"
+              >
+                <svg
+                  className="h-3.5 w-3.5 shrink-0 text-alert"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
+
                 <span>{errors.name}</span>
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="checkout-whatsapp" className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+            <label
+              htmlFor="checkout-whatsapp"
+              className="block text-xs font-semibold uppercase tracking-wide text-ink/70"
+            >
               Nomor WhatsApp Aktif
+              <span className="ml-1 font-normal normal-case text-ink/40">
+                (opsional)
+              </span>
             </label>
+
             <input
               ref={whatsappInputRef}
               id="checkout-whatsapp"
@@ -466,7 +657,6 @@ function CheckoutForm() {
               pattern="[0-9]*"
               autoComplete="tel"
               maxLength={15}
-              required
               value={whatsapp}
               onChange={handleWhatsappChange}
               onKeyDown={handleWhatsappKeyDown}
@@ -474,25 +664,48 @@ function CheckoutForm() {
               onBlur={handleWhatsappBlur}
               placeholder="Contoh: 081234567890"
               aria-invalid={errors.whatsapp ? "true" : "false"}
-              aria-describedby={errors.whatsapp ? "whatsapp-error" : undefined}
+              aria-describedby={
+                errors.whatsapp ? "whatsapp-error" : undefined
+              }
               className={`mt-1.5 w-full rounded-xl border px-4 py-2.5 font-mono text-sm text-ink outline-none transition-all ${
                 errors.whatsapp
                   ? "border-alert bg-alert/5 focus:border-alert focus:bg-white focus:ring-2 focus:ring-alert/20"
                   : "border-line bg-paper/60 focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
               }`}
             />
+
+            <p className="mt-1.5 text-[11px] text-ink/45">
+              Nomor WhatsApp wajib diisi saat mengajukan sewa dan hanya boleh
+              menggunakan angka.
+            </p>
+
             {errors.whatsapp && (
-              <p id="whatsapp-error" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert">
-                <svg className="h-3.5 w-3.5 shrink-0 text-alert" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <p
+                id="whatsapp-error"
+                className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert"
+              >
+                <svg
+                  className="h-3.5 w-3.5 shrink-0 text-alert"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
+
                 <span>{errors.whatsapp}</span>
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="checkout-ktp" className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+            <label
+              htmlFor="checkout-ktp"
+              className="block text-xs font-semibold uppercase tracking-wide text-ink/70"
+            >
               Unggah Foto KTP / Identitas
             </label>
 
@@ -515,21 +728,38 @@ function CheckoutForm() {
               />
             </div>
 
+            <p className="mt-1.5 text-[11px] text-ink/45">
+              Foto KTP wajib diunggah sebelum pengajuan sewa dapat diproses.
+            </p>
+
             {errors.ktp && (
-              <p id="ktp-error" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert">
-                <svg className="h-3.5 w-3.5 shrink-0 text-alert" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <p
+                id="ktp-error"
+                className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert"
+              >
+                <svg
+                  className="h-3.5 w-3.5 shrink-0 text-alert"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 001 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
+
                 <span>{errors.ktp}</span>
               </p>
             )}
 
             {ktpPreview && (
               <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <p className="text-xs text-ink/50">
                     Pratinjau KTP Terunggah:
                   </p>
+
                   <button
                     type="button"
                     onClick={handleRemoveKtp}
@@ -538,10 +768,11 @@ function CheckoutForm() {
                     Hapus / Ganti Foto
                   </button>
                 </div>
+
                 <img
                   src={ktpPreview}
                   alt="Pratinjau KTP"
-                  className="max-h-56 w-full rounded-xl border border-line object-contain bg-paper/60 p-2 shadow-sm"
+                  className="max-h-56 w-full rounded-xl border border-line bg-paper/60 object-contain p-2 shadow-sm"
                 />
               </div>
             )}
@@ -551,7 +782,7 @@ function CheckoutForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-ridge py-3 text-center text-xs font-bold text-fog shadow-sm hover:bg-ink transition-all disabled:opacity-50"
+              className="w-full rounded-xl bg-ridge py-3 text-center text-xs font-bold text-fog shadow-sm transition-all hover:bg-ink disabled:opacity-50"
             >
               {loading ? "Memproses Pengajuan..." : "Ajukan Sewa →"}
             </button>
