@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginAction } from "@/app/actions/auth";
@@ -24,6 +24,16 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "";
+
+  // Jika sudah login sebagai admin, langsung arahkan ke dashboard admin
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const role = localStorage.getItem("role");
+      if (role === "admin") {
+        router.replace("/admin/dashboard");
+      }
+    }
+  }, [router]);
 
   function validate() {
     const errs = {};
@@ -60,9 +70,9 @@ function LoginForm() {
       window.dispatchEvent(new Event("role-changed"));
 
       if (role === "admin") {
-        router.push("/admin/dashboard");
+        router.replace("/admin/dashboard");
       } else {
-        router.push(redirect || "/user/katalog");
+        router.replace(redirect || "/user/katalog");
       }
     } catch (err) {
       setError(err.message || "Gagal menghubungi server database kampus. Silakan coba lagi.");

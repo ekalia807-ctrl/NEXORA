@@ -50,7 +50,6 @@ const menuAdmin = [
   { href: "/admin/pendapatan", label: "Rekap Penghasilan" },
   { href: "/admin/reports", label: "Laporan Sistem" },
   { href: "/admin/history", label: "Histori Peminjaman" },
-  { href: "/", label: "Beranda Utama" },
 ];
 
 function MountainIcon({ className = "h-4 w-4" }) {
@@ -61,10 +60,11 @@ function MountainIcon({ className = "h-4 w-4" }) {
   );
 }
 
-function Brand({ onClick }) {
+function Brand({ onClick, role }) {
+  const href = role === "admin" ? "/admin/dashboard" : "/";
   return (
     <Link
-      href="/"
+      href={href}
       onClick={onClick}
       className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
     >
@@ -137,7 +137,7 @@ export default function NavBar() {
         <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           {/* Kiri */}
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <Brand />
+            <Brand role={role} />
 
             <span className="hidden h-5 w-px bg-line sm:block" aria-hidden="true" />
 
@@ -210,7 +210,7 @@ export default function NavBar() {
         <div>
           {/* Header drawer */}
           <div className="flex items-center justify-between border-b border-line pb-5">
-            <Brand onClick={() => setDrawerOpen(false)} />
+            <Brand onClick={() => setDrawerOpen(false)} role={role} />
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}

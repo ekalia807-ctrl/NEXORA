@@ -16,7 +16,12 @@ export function middleware(request) {
   const isAuthenticated = Boolean(sessionToken && user);
   const isAdmin = user?.role === "admin";
 
-  // 1. Proteksi Halaman Admin
+  // 1. Admin dilarang mengakses landing page (beranda utama) & katalog umum; otomatis diarahkan ke dashboard admin
+  if ((pathname === "/" || pathname === "/katalog") && isAuthenticated && isAdmin) {
+    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  }
+
+  // 2. Proteksi Halaman Admin
   if (pathname.startsWith("/admin")) {
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
@@ -28,16 +33,20 @@ export function middleware(request) {
     }
   }
 
-  // 2. Proteksi Halaman User
+  // 3. Proteksi Halaman User (Peminjam)
   if (pathname.startsWith("/user")) {
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", `${pathname}${search}`);
       return NextResponse.redirect(loginUrl);
     }
+    // Jika admin mengakses rute user, alihkan ke admin dashboard
+    if (isAdmin) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
   }
 
-  // 3. Jika sudah login, cegah buka halaman login / register lagi
+  // 4. Jika sudah login, cegah buka halaman login / register lagi
   if ((pathname === "/login" || pathname === "/register") && isAuthenticated) {
     const target = isAdmin ? "/admin/dashboard" : "/user/katalog";
     return NextResponse.redirect(new URL(target, request.url));
@@ -47,5 +56,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/user/:path*", "/login", "/register"],
+  matcher: ["/", "/katalog", "/admin/:path*", "/user/:path*", "/login", "/register"],
 };
