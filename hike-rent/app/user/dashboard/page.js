@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRentalsSync, statusStyle } from "@/lib/rentalsStore";
+import { useMyRentalsSync, statusStyle } from "@/lib/rentalsStore";
 import { useWishlist } from "@/lib/wishlistStore";
 import { formatRupiah } from "@/lib/hitungBiaya";
 
 export default function DashboardOverviewPage() {
-  const rentals = useRentalsSync();
+  const rentals = useMyRentalsSync();
   const wishlist = useWishlist();
 
   const sewaAktif = rentals.filter((r) => r.status === "Disetujui" || r.status === "Diambil").length;

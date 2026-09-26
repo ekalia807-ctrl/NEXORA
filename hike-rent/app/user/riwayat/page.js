@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRentalsSync, statusStyle } from "@/lib/rentalsStore";
+import { useMyRentalsSync, statusStyle } from "@/lib/rentalsStore";
 import { formatRupiah } from "@/lib/hitungBiaya";
 
 export default function UserRiwayatPage() {
-  const history = useRentalsSync();
+  const history = useMyRentalsSync();
 
   return (
     <div className="space-y-6">

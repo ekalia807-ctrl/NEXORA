@@ -5,6 +5,24 @@ import { useEffect, useSyncExternalStore } from "react";
 const STORAGE_KEY = "nexora_rentals_v2";
 const EVENT_NAME = "rentals-changed";
 
+// Baca id user yang sedang login dari localStorage["user"]
+// (disimpan oleh halaman Profil / proses login).
+function getCurrentUserId() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    const id = parsed.id ?? parsed.user_id ?? null;
+
+    return id !== null && id !== undefined ? String(id) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function normalizeRental(r) {
   if (!r) return null;
   const idStr = String(r.id || `NX-${Math.floor(1000 + Math.random() * 9000)}`);
@@ -52,7 +70,7 @@ export function normalizeRental(r) {
   return {
     id: formattedId,
     backendId: typeof r.id === "number" ? r.id : Number(r.id) || null,
-    user_id: r.user_id || null,
+    user_id: r.user_id !== undefined && r.user_id !== null ? String(r.user_id) : null,
     user: r.user || r.name || r.user_name || "Peminjam",
     name: r.name || r.user || "Peminjam",
     email: r.email || r.user_email || "",
@@ -106,9 +124,30 @@ export function getRentals() {
   return readAll();
 }
 
+// Rental milik user yang sedang login saja — dipakai di halaman Riwayat (user),
+// supaya akun lain / data lama di localStorage yang sama tidak ikut kebaca.
+export function getMyRentals() {
+  const currentUserId = getCurrentUserId();
+
+  // Kalau tidak ada user yang login, jangan tampilkan apa-apa
+  // (lebih aman daripada menampilkan semua data).
+  if (!currentUserId) return [];
+
+  return readAll().filter((r) => String(r.user_id) === currentUserId);
+}
+
 export function addRental(rental) {
   const current = readAll();
-  const normalized = normalizeRental(rental);
+
+  // Kalau pemanggil tidak menyertakan user_id secara eksplisit,
+  // ambil otomatis dari user yang sedang login supaya rental ini
+  // ke-tag dengan benar dan tidak bocor ke akun lain.
+  const rentalWithUser =
+    rental && rental.user_id !== undefined && rental.user_id !== null
+      ? rental
+      : { ...rental, user_id: getCurrentUserId() };
+
+  const normalized = normalizeRental(rentalWithUser);
   const next = [normalized, ...current];
   writeAll(next);
   return next;
@@ -212,10 +251,16 @@ function getSnapshot() {
   return JSON.stringify(readAll());
 }
 
+// Snapshot khusus rental milik user yang sedang login.
+function getMySnapshot() {
+  return JSON.stringify(getMyRentals());
+}
+
 function getServerSnapshot() {
   return JSON.stringify([]);
 }
 
+// Semua rental (dipakai admin: lihat & kelola semua pengajuan).
 export function useRentals() {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   return JSON.parse(snapshot);
@@ -223,6 +268,22 @@ export function useRentals() {
 
 export function useRentalsSync() {
   const rentals = useRentals();
+
+  useEffect(() => {
+    syncRentalsFromBackend();
+  }, []);
+
+  return rentals;
+}
+
+// Rental milik user yang sedang login saja (dipakai halaman Riwayat user).
+export function useMyRentals() {
+  const snapshot = useSyncExternalStore(subscribe, getMySnapshot, getServerSnapshot);
+  return JSON.parse(snapshot);
+}
+
+export function useMyRentalsSync() {
+  const rentals = useMyRentals();
 
   useEffect(() => {
     syncRentalsFromBackend();
