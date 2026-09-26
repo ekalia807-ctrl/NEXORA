@@ -27,11 +27,11 @@ export default function AdminApprovalPage() {
   const counts = useMemo(() => {
     return {
       all: allRentals.length,
-      pending: allRentals.filter((r) => r.status === "Menunggu verifikasi").length,
-      approved: allRentals.filter((r) => r.status === "Disetujui").length,
-      borrowed: allRentals.filter((r) => r.status === "Diambil").length,
-      done: allRentals.filter((r) => r.status === "Selesai").length,
-      rejected: allRentals.filter((r) => r.status === "Ditolak" || r.status === "Dibatalkan").length,
+      pending: allRentals.filter((r) => r.status === "Menunggu verifikasi" || r.status === "diajukan" || r.status === "menunggu_verifikasi").length,
+      approved: allRentals.filter((r) => r.status === "Disetujui" || r.status === "diverifikasi" || r.status === "aktif").length,
+      borrowed: allRentals.filter((r) => r.status === "Diambil" || r.status === "diambil").length,
+      done: allRentals.filter((r) => r.status === "Selesai" || r.status === "dikembalikan" || r.status === "selesai").length,
+      rejected: allRentals.filter((r) => r.status === "Ditolak" || r.status === "ditolak" || r.status === "Dibatalkan").length,
     };
   }, [allRentals]);
 
@@ -39,11 +39,11 @@ export default function AdminApprovalPage() {
   const filteredRentals = useMemo(() => {
     return allRentals.filter((req) => {
       // Filter tab
-      if (activeTab === "pending" && req.status !== "Menunggu verifikasi") return false;
-      if (activeTab === "approved" && req.status !== "Disetujui") return false;
-      if (activeTab === "borrowed" && req.status !== "Diambil") return false;
-      if (activeTab === "done" && req.status !== "Selesai") return false;
-      if (activeTab === "rejected" && req.status !== "Ditolak" && req.status !== "Dibatalkan") return false;
+      if (activeTab === "pending" && !(req.status === "Menunggu verifikasi" || req.status === "diajukan" || req.status === "menunggu_verifikasi")) return false;
+      if (activeTab === "approved" && !(req.status === "Disetujui" || req.status === "diverifikasi" || req.status === "aktif")) return false;
+      if (activeTab === "borrowed" && !(req.status === "Diambil" || req.status === "diambil")) return false;
+      if (activeTab === "done" && !(req.status === "Selesai" || req.status === "dikembalikan" || req.status === "selesai")) return false;
+      if (activeTab === "rejected" && !(req.status === "Ditolak" || req.status === "ditolak" || req.status === "Dibatalkan")) return false;
 
       // Filter search
       if (search.trim()) {
@@ -67,22 +67,31 @@ export default function AdminApprovalPage() {
     // Validasi urutan status
     const current = req.status;
 
-    if (current === "Menunggu verifikasi") {
+    if (current === "Menunggu verifikasi" || current === "diajukan" || current === "menunggu_verifikasi") {
       if (targetStatus !== "Disetujui" && targetStatus !== "Ditolak") {
         alert("Validasi: Pengajuan yang masih menunggu verifikasi hanya dapat disetujui atau ditolak!");
         return;
       }
-    } else if (current === "Disetujui") {
-      if (targetStatus !== "Diambil" && targetStatus !== "Ditolak" && targetStatus !== "Dibatalkan") {
+    } else if (current === "Disetujui" || current === "diverifikasi" || current === "aktif") {
+      if (targetStatus === "Diambil" || targetStatus === "diambil") {
+        const hasProof = Boolean(req.payment_proof && String(req.payment_proof).trim().length > 10);
+        if (!hasProof) {
+          alert(
+            "⚠️ PERINGATAN: Peminjam belum mengonfirmasi pembayaran atau mengunggah bukti transfer!\n\nAdmin tidak dapat menyerahkan alat / mengubah status ke 'Diambil' sebelum peminjam mengunggah bukti bayar."
+          );
+          return;
+        }
+      }
+      if (targetStatus !== "Diambil" && targetStatus !== "diambil" && targetStatus !== "Ditolak" && targetStatus !== "ditolak" && targetStatus !== "Dibatalkan") {
         alert("Validasi: Dari status Disetujui, tahap berikutnya adalah Diambil (setelah verifikasi pembayaran) atau Dibatalkan!");
         return;
       }
-    } else if (current === "Diambil") {
+    } else if (current === "Diambil" || current === "diambil") {
       if (targetStatus !== "Selesai" && targetStatus !== "Dibatalkan") {
         alert("Validasi: Dari status Diambil, tahap berikutnya adalah Selesai (saat barang dikembalikan)!");
         return;
       }
-    } else if (current === "Selesai" || current === "Ditolak") {
+    } else if (current === "Selesai" || current === "Ditolak" || current === "dikembalikan" || current === "ditolak") {
       alert("Pengajuan ini sudah berstatus final dan tidak dapat diubah lagi.");
       return;
     }
@@ -117,13 +126,49 @@ export default function AdminApprovalPage() {
       Number(req.backendId) ||
       (typeof req.id === "number" ? req.id : (!isNaN(Number(req.id)) ? Number(req.id) : null));
 
+    // Pertahankan payment proof dan data JSON yang tersimpan di DB
+    let baseOrderNote = req.item || "";
+    let existingProof = req.payment_proof || "";
+    let existingMethod = req.payment_method || "";
+    let existingDate = req.payment_date || "";
+    let existingUserNotes = req.payment_notes || "";
+
+    const rawNotes = req.notes || req.note || "";
+    try {
+      if (typeof rawNotes === "string" && rawNotes.trim().startsWith("{") && rawNotes.trim().endsWith("}")) {
+        const parsed = JSON.parse(rawNotes.trim());
+        if (parsed.order_note) baseOrderNote = parsed.order_note;
+        if (parsed.payment_proof && !existingProof) existingProof = parsed.payment_proof;
+        if (parsed.payment_method && !existingMethod) existingMethod = parsed.payment_method;
+        if (parsed.payment_date && !existingDate) existingDate = parsed.payment_date;
+        if (parsed.payment_notes && !existingUserNotes) existingUserNotes = parsed.payment_notes;
+      }
+    } catch { }
+
+    let subStatus = "disetujui";
+    if (targetStatus === "Diambil") subStatus = "diambil";
+    else if (targetStatus === "Selesai") subStatus = "selesai";
+    else if (targetStatus === "Ditolak" || targetStatus === "Dibatalkan") subStatus = "ditolak";
+    else if (targetStatus === "Menunggu verifikasi") subStatus = "diajukan";
+
+    const dbNotesPayload = JSON.stringify({
+      order_note: baseOrderNote || `Pengajuan sewa: ${req.item}`,
+      sub_status: subStatus,
+      payment_proof: existingProof,
+      payment_method: existingMethod,
+      payment_status: targetStatus === "Diambil" || targetStatus === "Selesai" ? "terverifikasi" : (req.payment_status || "menunggu_verifikasi"),
+      payment_date: existingDate || new Date().toLocaleString("id-ID"),
+      payment_notes: existingUserNotes,
+      admin_note: noteText,
+      updated_at: new Date().toISOString(),
+    });
+
     // 2. Update backend rental table jika rentalBackendId valid
     if (rentalBackendId) {
       try {
         await updateRentalAction(rentalBackendId, {
           status: backendStatus,
-          note: noteText,
-          notes: noteText,
+          notes: dbNotesPayload,
         });
       } catch (err) {
         console.warn("Update rental backend deferred:", err.message);
@@ -155,7 +200,7 @@ export default function AdminApprovalPage() {
     // 4. Sinkronkan ulang data dari backend agar state lokal selalu akurat
     try {
       await syncRentalsFromBackend();
-    } catch {}
+    } catch { }
 
     // Reset input note
     setStatusNotes((prev) => ({ ...prev, [req.id]: "" }));
@@ -196,66 +241,60 @@ export default function AdminApprovalPage() {
           <button
             type="button"
             onClick={() => setActiveTab("all")}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === "all"
-                ? "bg-ridge text-fog shadow-sm"
-                : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
-            }`}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${activeTab === "all"
+              ? "bg-ridge text-fog shadow-sm"
+              : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
+              }`}
           >
             Semua ({counts.all})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("pending")}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === "pending"
-                ? "bg-amber text-ink shadow-sm"
-                : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
-            }`}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${activeTab === "pending"
+              ? "bg-amber text-ink shadow-sm"
+              : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
+              }`}
           >
             Menunggu Verifikasi ({counts.pending})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("approved")}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === "approved"
-                ? "bg-moss text-fog shadow-sm"
-                : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
-            }`}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${activeTab === "approved"
+              ? "bg-moss text-fog shadow-sm"
+              : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
+              }`}
           >
             Disetujui / Bayar ({counts.approved})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("borrowed")}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === "borrowed"
-                ? "bg-ridge text-amber shadow-sm"
-                : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
-            }`}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${activeTab === "borrowed"
+              ? "bg-ridge text-amber shadow-sm"
+              : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
+              }`}
           >
             Sedang Dipinjam ({counts.borrowed})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("done")}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === "done"
-                ? "bg-ink text-fog shadow-sm"
-                : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
-            }`}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${activeTab === "done"
+              ? "bg-ink text-fog shadow-sm"
+              : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
+              }`}
           >
             Selesai ({counts.done})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("rejected")}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === "rejected"
-                ? "bg-alert text-fog shadow-sm"
-                : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
-            }`}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${activeTab === "rejected"
+              ? "bg-alert text-fog shadow-sm"
+              : "bg-paper/70 text-ink/70 hover:bg-paper hover:text-ink"
+              }`}
           >
             Ditolak ({counts.rejected})
           </button>
@@ -295,11 +334,12 @@ export default function AdminApprovalPage() {
             );
             const waUrl = `https://wa.me/${cleanWa || "6281234567890"}?text=${waMessage}`;
 
-            const isPending = req.status === "Menunggu verifikasi";
-            const isApproved = req.status === "Disetujui";
-            const isBorrowed = req.status === "Diambil";
-            const isFinished = req.status === "Selesai";
-            const isRejected = req.status === "Ditolak" || req.status === "Dibatalkan";
+            const isPending = req.status === "Menunggu verifikasi" || req.status === "diajukan" || req.status === "menunggu_verifikasi";
+            const isApproved = req.status === "Disetujui" || req.status === "diverifikasi" || req.status === "aktif";
+            const isBorrowed = req.status === "Diambil" || req.status === "diambil";
+            const isFinished = req.status === "Selesai" || req.status === "dikembalikan" || req.status === "selesai";
+            const isRejected = req.status === "Ditolak" || req.status === "ditolak" || req.status === "Dibatalkan";
+            const hasPaymentProof = Boolean(req.payment_proof && String(req.payment_proof).trim().length > 10);
             const isLoading = loadingId === req.id;
 
             return (
@@ -332,9 +372,8 @@ export default function AdminApprovalPage() {
 
                   <div className="flex flex-col items-end gap-2">
                     <span
-                      className={`rounded-full px-3.5 py-1 text-xs font-semibold shadow-sm ${
-                        statusStyle[req.status] || "bg-amber text-ink"
-                      }`}
+                      className={`rounded-full px-3.5 py-1 text-xs font-semibold shadow-sm ${statusStyle[req.status] || "bg-amber text-ink"
+                        }`}
                     >
                       ● {req.status}
                     </span>
@@ -342,13 +381,12 @@ export default function AdminApprovalPage() {
                     {/* Badge Status Pembayaran (Task 3 & 7) */}
                     {req.payment_status && (
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border ${
-                          req.payment_status === "terverifikasi"
-                            ? "bg-moss/10 border-moss/30 text-moss"
-                            : req.payment_status === "menunggu_verifikasi"
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border ${req.payment_status === "terverifikasi"
+                          ? "bg-moss/10 border-moss/30 text-moss"
+                          : req.payment_status === "menunggu_verifikasi"
                             ? "bg-amber/20 border-amber/40 text-ink font-semibold"
                             : "bg-paper border-line text-ink/60"
-                        }`}
+                          }`}
                       >
                         {req.payment_status === "terverifikasi" && "✓ Bayar Terverifikasi"}
                         {req.payment_status === "menunggu_verifikasi" && "💳 Bukti Bayar Diunggah (Perlu Dicek)"}
@@ -389,7 +427,7 @@ export default function AdminApprovalPage() {
                   </div>
                 )}
 
-                {/* Bukti Bayar Preview & Lightbox Trigger (Task 7) */}
+                {/* Bukti Bayar Preview & Lightbox Trigger */}
                 {req.payment_proof && (
                   <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber/30 bg-amber/10 p-3.5">
                     <div className="flex items-center gap-3">
@@ -420,6 +458,21 @@ export default function AdminApprovalPage() {
                   </div>
                 )}
 
+                {/* Warning Banner Jika Belum Ada Bukti Pembayaran */}
+                {isApproved && !hasPaymentProof && (
+                  <div className="mt-3.5 flex items-start gap-3 rounded-xl border border-amber/50 bg-amber/15 p-3.5 text-xs text-amber-950">
+                    <span className="text-lg leading-none mt-0.5">⚠️</span>
+                    <div>
+                      <strong className="block font-semibold text-amber-950">
+                        Peminjam Belum Konfirmasi Pembayaran
+                      </strong>
+                      <p className="mt-0.5 text-[11px] text-amber-850/90 leading-relaxed">
+                        Peminjam belum mengunggah bukti transfer atau struk pembayaran. Tombol penyerahan alat (<strong className="font-mono text-amber-950">&quot;Diambil&quot;</strong>) dikunci untuk mencegah penyerahan barang sebelum pembayaran diselesaikan.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Input Catatan Petugas */}
                 {!isFinished && !isRejected && (
                   <div className="mt-4">
@@ -435,7 +488,7 @@ export default function AdminApprovalPage() {
                   </div>
                 )}
 
-                {/* Status Action Buttons (Task 2) */}
+                {/* Status Action Buttons */}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line/60 pt-4">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Tahap 1: Approval */}
@@ -463,20 +516,46 @@ export default function AdminApprovalPage() {
                     {/* Tahap 2: Menunggu Pembayaran -> Diambil */}
                     {isApproved && (
                       <>
-                        <button
-                          type="button"
-                          disabled={isLoading}
-                          onClick={() =>
-                            handleStatusTransition(
-                              req,
-                              "Diambil",
-                              "Pembayaran terverifikasi oleh Admin. Alat diserahkan kepada peminjam."
-                            )
-                          }
-                          className="rounded-xl bg-ridge px-4 py-2 text-xs font-semibold text-fog shadow-sm hover:bg-ink transition-all disabled:opacity-50"
-                        >
-                          📦 Konfirmasi Bayar & Serahkan Alat (Diambil)
-                        </button>
+                        {hasPaymentProof ? (
+                          <button
+                            type="button"
+                            disabled={isLoading}
+                            onClick={() =>
+                              handleStatusTransition(
+                                req,
+                                "Diambil",
+                                "Pembayaran terverifikasi oleh Admin. Alat diserahkan kepada peminjam."
+                              )
+                            }
+                            className="rounded-xl bg-ridge px-4 py-2 text-xs font-semibold text-fog shadow-sm hover:bg-ink transition-all disabled:opacity-50"
+                          >
+                            📦 Konfirmasi Bayar & Serahkan Alat (Diambil)
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                alert(
+                                  "⚠️ PERINGATAN: Peminjam belum mengonfirmasi pembayaran atau mengunggah bukti transfer!\n\nAdmin tidak dapat menyerahkan alat atau mengubah status ke 'Diambil' sebelum peminjam mengunggah foto bukti bayar."
+                                );
+                              }}
+                              className="cursor-pointer rounded-xl bg-amber/15 border border-amber/40 px-4 py-2 text-xs font-semibold text-amber-950 shadow-xs hover:bg-amber/25 transition-all flex items-center gap-1.5"
+                              title="Klik untuk melihat status terkunci"
+                            >
+                              <span>🔒</span>
+                              <span>Serahkan Alat (Terkunci: Belum Ada Bukti Bayar)</span>
+                            </button>
+                            <a
+                              href={waUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-xl border border-line bg-paper px-3 py-2 text-xs font-medium text-ink/70 hover:bg-white hover:text-ink transition-all"
+                            >
+                              💬 Ingatkan via WA
+                            </a>
+                          </div>
+                        )}
                         <button
                           type="button"
                           disabled={isLoading}

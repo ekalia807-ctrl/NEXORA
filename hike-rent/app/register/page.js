@@ -134,37 +134,45 @@ function RegisterForm() {
   const loginHref = safeRedirect ? `/login?redirect=${encodeURIComponent(safeRedirect)}` : "/login";
 
   return (
-    <section className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-6 py-12">
-      <div className="border border-line bg-white/40 p-8 shadow-sm">
+    <section className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-4 sm:px-6 py-12">
+      <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
         <div className="text-center">
-          <h1 className="font-display text-3xl font-bold text-ink">Daftar Akun</h1>
-          <p className="mt-2 text-sm text-ink/65">
-            Buat akun baru untuk mulai menyewa alat pendakian di NEXORA.
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+            Daftar
+          </h1>
+          <p className="mt-1.5 text-sm text-ink/65 leading-relaxed">
+            Buat akun untuk mulai menyewa perlengkapan pendakian di NEXORA.
           </p>
         </div>
 
         {safeRedirect && !toast && (
-          <div className="mt-5 rounded-sm border border-amber/40 bg-amber/15 p-3 text-xs text-ink/80 flex items-start gap-2">
-            <span>Daftar akun baru untuk melanjutkan proses sewa alat Anda.</span>
+          <div className="mt-5 rounded-xl border border-amber/40 bg-amber/15 p-3.5 text-xs text-ink/80 font-medium flex items-start gap-2">
+            <span>Daftar akun baru untuk melanjutkan proses pengajuan sewa alat Anda.</span>
           </div>
         )}
 
         {toast && (
           <div
             role="alert"
-            className={`mt-5 rounded-sm border px-3.5 py-2.5 text-xs flex items-center justify-between ${
-              toast.type === "success" ? "border-moss/40 bg-moss/10 text-moss font-medium" : "border-alert/40 bg-alert/10 text-alert"
+            className={`mt-5 rounded-xl border p-3.5 text-xs flex items-center justify-between shadow-2xs ${
+              toast.type === "success"
+                ? "border-moss/40 bg-moss/10 text-moss font-semibold"
+                : "border-alert/40 bg-alert/10 text-alert font-medium"
             }`}
           >
             <span>{toast.message}</span>
-            <button type="button" onClick={() => setToast(null)} className="text-xs opacity-60 hover:opacity-100 ml-2">✕</button>
+            <button type="button" onClick={() => setToast(null)} className="text-xs opacity-60 hover:opacity-100 ml-2 font-bold">
+              ✕
+            </button>
           </div>
         )}
 
         <form onSubmit={handleRegister} noValidate className="mt-6 space-y-4">
           {/* Nama */}
           <div>
-            <label htmlFor="reg-name" className="block text-sm font-medium text-ink/75">Nama Lengkap</label>
+            <label htmlFor="reg-name" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
+              Nama Lengkap
+            </label>
             <input
               id="reg-name"
               type="text"
@@ -174,16 +182,20 @@ function RegisterForm() {
               onChange={(e) => updateField("name", e.target.value)}
               onBlur={() => handleBlur("name")}
               placeholder="Contoh: Rian Anggara"
-              className={`mt-1.5 w-full border bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors ${
-                errors.name ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
+              className={`mt-1.5 w-full rounded-xl border bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all ${
+                errors.name
+                  ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
+                  : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
               } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
             />
-            {errors.name && <p className="mt-1 text-xs text-alert">{errors.name}</p>}
+            {errors.name && <p className="mt-1 text-xs text-alert font-medium">{errors.name}</p>}
           </div>
 
           {/* Email */}
           <div>
-            <label htmlFor="reg-email" className="block text-sm font-medium text-ink/75">Email</label>
+            <label htmlFor="reg-email" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
+              Alamat Email
+            </label>
             <input
               id="reg-email"
               type="email"
@@ -192,16 +204,20 @@ function RegisterForm() {
               onChange={(e) => updateField("email", e.target.value)}
               onBlur={() => handleBlur("email")}
               placeholder="nama@email.com"
-              className={`mt-1.5 w-full border bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors ${
-                errors.email ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
+              className={`mt-1.5 w-full rounded-xl border bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all ${
+                errors.email
+                  ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
+                  : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
               } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
             />
-            {errors.email && <p className="mt-1 text-xs text-alert">{errors.email}</p>}
+            {errors.email && <p className="mt-1 text-xs text-alert font-medium">{errors.email}</p>}
           </div>
 
           {/* Kata Sandi */}
           <div>
-            <label htmlFor="reg-password" className="block text-sm font-medium text-ink/75">Kata Sandi</label>
+            <label htmlFor="reg-password" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
+              Kata Sandi
+            </label>
             <div className="relative mt-1.5">
               <input
                 id="reg-password"
@@ -211,8 +227,10 @@ function RegisterForm() {
                 onChange={(e) => updateField("password", e.target.value)}
                 onBlur={() => handleBlur("password")}
                 placeholder="Minimal 6 karakter"
-                className={`w-full border bg-paper px-3 py-2 pr-10 text-sm text-ink outline-none transition-colors ${
-                  errors.password ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
+                className={`w-full rounded-xl border bg-paper/60 px-4 py-2.5 pr-10 text-sm text-ink outline-none transition-all ${
+                  errors.password
+                    ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
+                    : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
                 } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
               />
               <button
@@ -220,17 +238,19 @@ function RegisterForm() {
                 onClick={() => setShowPw(!showPw)}
                 disabled={loading}
                 aria-label={showPw ? "Sembunyikan sandi" : "Lihat sandi"}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-ink/50 hover:text-ink focus:outline-none"
+                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-ink/50 hover:text-ink focus:outline-none"
               >
                 <EyeIcon open={showPw} />
               </button>
             </div>
-            {errors.password && <p className="mt-1 text-xs text-alert">{errors.password}</p>}
+            {errors.password && <p className="mt-1 text-xs text-alert font-medium">{errors.password}</p>}
           </div>
 
           {/* Konfirmasi Kata Sandi */}
           <div>
-            <label htmlFor="reg-confirm-password" className="block text-sm font-medium text-ink/75">Konfirmasi Kata Sandi</label>
+            <label htmlFor="reg-confirm-password" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
+              Konfirmasi Kata Sandi
+            </label>
             <div className="relative mt-1.5">
               <input
                 id="reg-confirm-password"
@@ -240,8 +260,10 @@ function RegisterForm() {
                 onChange={(e) => updateField("confirmPassword", e.target.value)}
                 onBlur={() => handleBlur("confirmPassword")}
                 placeholder="Ulangi kata sandi"
-                className={`w-full border bg-paper px-3 py-2 pr-10 text-sm text-ink outline-none transition-colors ${
-                  errors.confirmPassword ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
+                className={`w-full rounded-xl border bg-paper/60 px-4 py-2.5 pr-10 text-sm text-ink outline-none transition-all ${
+                  errors.confirmPassword
+                    ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
+                    : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
                 } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
               />
               <button
@@ -249,34 +271,36 @@ function RegisterForm() {
                 onClick={() => setShowConfirmPw(!showConfirmPw)}
                 disabled={loading}
                 aria-label={showConfirmPw ? "Sembunyikan konfirmasi sandi" : "Lihat konfirmasi sandi"}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-ink/50 hover:text-ink focus:outline-none"
+                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-ink/50 hover:text-ink focus:outline-none"
               >
                 <EyeIcon open={showConfirmPw} />
               </button>
             </div>
-            {errors.confirmPassword && <p className="mt-1 text-xs text-alert">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && <p className="mt-1 text-xs text-alert font-medium">{errors.confirmPassword}</p>}
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className={`w-full rounded-sm bg-ridge py-2.5 text-center text-sm font-medium text-fog transition-all ${
+            className={`w-full rounded-xl bg-ridge py-3 text-center text-sm font-semibold text-fog shadow-sm transition-all ${
               loading ? "opacity-75 cursor-not-allowed" : "hover:bg-ink active:scale-[0.99]"
             }`}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Spinner />
-                <span>Mendaftarkan...</span>
+                <span>Mendaftarkan akun...</span>
               </span>
-            ) : "Daftar & Masuk"}
+            ) : (
+              "Daftar & Masuk Otomatis"
+            )}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-ink/60">
+        <p className="mt-6 text-center text-xs text-ink/65">
           Sudah punya akun?{" "}
-          <Link href={loginHref} className="font-medium text-ink underline underline-offset-4 hover:text-amber">
+          <Link href={loginHref} className="font-semibold text-ink underline underline-offset-4 hover:text-amber transition-colors">
             Masuk di sini
           </Link>
         </p>
@@ -284,6 +308,7 @@ function RegisterForm() {
     </section>
   );
 }
+
 
 export default function RegisterPage() {
   return (

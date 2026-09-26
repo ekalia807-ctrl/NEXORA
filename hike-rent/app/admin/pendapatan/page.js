@@ -39,53 +39,72 @@ export default function AdminRevenuePage() {
 
   return (
     <div className="space-y-6">
-      <div className="border border-line bg-white/40 p-6">
-        <div className="flex items-center justify-between">
-          <h1 className="font-display text-2xl font-bold text-ink">Rekap Penghasilan</h1>
-          <span className="rounded-full bg-ridge px-3 py-1 font-mono text-xs text-fog">
-            Panel Admin
+      {/* Header Standar Admin */}
+      <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 lg:p-8 shadow-sm backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
+                Panel Admin
+              </span>
+              <span className="h-1 w-1 rounded-full bg-ink/30" />
+              <span className="font-mono text-[11px] text-ink/50">Keuangan & Rekap</span>
+            </div>
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+              Rekap Penghasilan Rental
+            </h1>
+            <p className="mt-1.5 text-sm text-ink/65 max-w-2xl">
+              Total omzet dan tren finansial dari seluruh transaksi sewa yang sedang aktif maupun telah selesai dikembalikan.
+            </p>
+          </div>
+          <span className="rounded-full bg-ridge px-3.5 py-1 font-mono text-xs font-semibold text-fog shadow-sm">
+            {counted.length} Transaksi Terhitung
           </span>
         </div>
-        <p className="mt-2 text-sm text-ink/65">
-          Total pendapatan dari transaksi sewa yang selesai atau sedang berjalan.
-        </p>
       </div>
 
+      {/* Kartu Metrik Keuangan */}
       <div className="grid gap-6 sm:grid-cols-2">
-        <div className="border border-line bg-ridge p-6 text-fog">
-          <div className="font-mono text-xs text-fog/60">TOTAL PENDAPATAN</div>
-          <div className="mt-2 font-display text-3xl font-bold">
+        <div className="rounded-2xl border border-ridge/80 bg-ridge p-6 text-fog shadow-sm backdrop-blur-md">
+          <div className="font-mono text-xs font-semibold tracking-wider text-amber uppercase">TOTAL PENDAPATAN RIIL</div>
+          <div className="mt-2 font-display text-3xl sm:text-4xl font-bold tracking-tight">
             Rp{totalPendapatan.toLocaleString("id-ID")}
           </div>
+          <p className="mt-2 text-xs text-fog/70">Akumulasi sewa selesai & aktif di database</p>
         </div>
-        <div className="border border-line bg-white/40 p-6">
-          <div className="font-mono text-xs text-ink/50">RATA-RATA PER BULAN</div>
-          <div className="mt-2 font-display text-3xl font-bold text-ink">
+        <div className="rounded-2xl border border-line bg-white/70 p-6 shadow-sm backdrop-blur-md">
+          <div className="font-mono text-xs font-semibold tracking-wider text-ink/50 uppercase">RATA-RATA OMZET / BULAN</div>
+          <div className="mt-2 font-display text-3xl sm:text-4xl font-bold tracking-tight text-ink">
             Rp{rataRata.toLocaleString("id-ID")}
           </div>
+          <p className="mt-2 text-xs text-ink/55">Berdasarkan {monthly.length} periode bulan transaksi</p>
         </div>
       </div>
 
-      <div className="border border-line bg-white/40 p-6">
-        <h2 className="font-display text-lg font-semibold text-ink">Tren Bulanan</h2>
+      {/* Grafik Tren Bulanan */}
+      <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+        <div className="border-b border-line/60 pb-3 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold text-ink">Tren Penghasilan Bulanan</h2>
+          <span className="font-mono text-xs text-ink/50">Grafik Performa</span>
+        </div>
         {monthly.length === 0 ? (
-          <div className="mt-6 py-8 text-center text-sm text-ink/50">
+          <div className="py-12 text-center text-sm text-ink/50 font-mono">
             Belum ada data transaksi bulanan yang aktif atau selesai.
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-5">
             {monthly.map((m) => (
               <div key={m.month}>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-ink/70">{formatMonth(m.month)}</span>
-                  <span className="font-mono text-ink">
+                <div className="flex items-center justify-between text-sm font-medium">
+                  <span className="text-ink/80">{formatMonth(m.month)}</span>
+                  <span className="font-mono font-semibold text-ink">
                     Rp{m.total.toLocaleString("id-ID")}
                   </span>
                 </div>
-                <div className="mt-1.5 h-2.5 w-full bg-line">
+                <div className="mt-2 h-3 w-full rounded-full bg-line/60 overflow-hidden">
                   <div
-                    className="h-2.5 bg-ridge"
-                    style={{ width: `${(m.total / maxBulan) * 100}%` }}
+                    className="h-full rounded-full bg-ridge transition-all duration-500"
+                    style={{ width: `${Math.max(5, (m.total / maxBulan) * 100)}%` }}
                   />
                 </div>
               </div>
@@ -94,37 +113,45 @@ export default function AdminRevenuePage() {
         )}
       </div>
 
-      <div className="overflow-x-auto border border-line bg-white/40">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-line text-xs uppercase text-ink/50">
-              <th className="px-4 py-3 font-medium">ID Transaksi</th>
-              <th className="px-4 py-3 font-medium">Pengguna</th>
-              <th className="px-4 py-3 font-medium">Tanggal</th>
-              <th className="px-4 py-3 font-medium text-right">Nominal</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {counted.map((t) => (
-              <tr key={t.id}>
-                <td className="px-4 py-3 font-mono text-xs text-ink/50">{t.id}</td>
-                <td className="px-4 py-3 text-ink/80">{t.user || t.name}</td>
-                <td className="px-4 py-3 text-ink/70">{t.date}</td>
-                <td className="px-4 py-3 text-right font-mono text-ink">
-                  Rp{Number(t.total || t.total_price || 0).toLocaleString("id-ID")}
-                </td>
+      {/* Tabel Rincian Transaksi */}
+      <div className="rounded-2xl overflow-hidden border border-line bg-white/70 shadow-sm backdrop-blur-md">
+        <div className="overflow-x-auto [scrollbar-width:thin]">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-line bg-paper/50 text-xs uppercase font-semibold text-ink/60">
+                <th className="px-5 py-3.5">ID Transaksi</th>
+                <th className="px-5 py-3.5">Nama Peminjam</th>
+                <th className="px-5 py-3.5">Periode Sewa</th>
+                <th className="px-5 py-3.5 text-right">Nominal Transaksi</th>
               </tr>
-            ))}
-            {counted.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-12 text-center text-sm text-ink/50">
-                  Belum ada transaksi pendapatan tercatat.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-line/60">
+              {counted.map((t) => (
+                <tr key={t.id} className="hover:bg-white/60 transition-colors">
+                  <td className="px-5 py-3.5 font-mono text-xs font-semibold text-ink/70">
+                    <span className="rounded bg-ridge/10 px-2 py-0.5 text-ridge border border-ridge/20">
+                      {t.id}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 font-semibold text-ink">{t.user || t.name}</td>
+                  <td className="px-5 py-3.5 text-ink/70 text-xs">{t.date}</td>
+                  <td className="px-5 py-3.5 text-right font-mono font-bold text-ink">
+                    Rp{Number(t.total || t.total_price || 0).toLocaleString("id-ID")}
+                  </td>
+                </tr>
+              ))}
+              {counted.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-12 text-center text-sm text-ink/50 font-mono">
+                    Belum ada riwayat transaksi pendapatan tercatat.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
+

@@ -16,8 +16,23 @@ import { createRentalStatusLogAction } from "./rentalStatusLogs";
 export async function fetchRentalsAction() {
   try {
     const { token } = await getCurrentSession();
-    const data = await getRentals(token);
-    return { success: true, data: Array.isArray(data) ? data : [] };
+    const bearerToken = token || process.env.NEXT_PUBLIC_DEV_TOKEN || "";
+    const list = await getRentals(bearerToken);
+    if (!Array.isArray(list)) return { success: false, data: [] };
+
+    // Ambil detail (notes, items) untuk setiap rental secara parallel
+    const detailed = await Promise.all(
+      list.map(async (r) => {
+        try {
+          const detail = await getRentalById(r.id, bearerToken);
+          return { ...r, ...detail };
+        } catch {
+          return r;
+        }
+      })
+    );
+
+    return { success: true, data: detailed };
   } catch (err) {
     return { success: false, error: err.message, data: [] };
   }
@@ -65,7 +80,7 @@ export async function createRentalAction(rentalData) {
           note: `Pengajuan sewa baru: ${payload.notes || "Peralatan pendakian"}`,
           changed_by: userId,
         });
-      } catch {}
+      } catch { }
     }
 
     return { success: true, data };
@@ -104,11 +119,26 @@ export async function updateRentalAction(id, rentalData) {
       mappedStatus = "ditolak";
     }
 
-    const payload = {
-      ...rentalData,
-      status: mappedStatus,
-      notes: rentalData.notes || rentalData.note || "",
-    };
+    const allowedKeys = [
+      "status",
+      "notes",
+      "rejection_reason",
+      "ktp_snapshot_url",
+      "total_amount",
+      "duration_nights",
+      "start_date",
+      "end_date",
+    ];
+    const payload = {};
+    for (const key of allowedKeys) {
+      if (rentalData[key] !== undefined) {
+        payload[key] = rentalData[key];
+      }
+    }
+    payload.status = mappedStatus;
+    if (rentalData.notes !== undefined || rentalData.note !== undefined) {
+      payload.notes = rentalData.notes || rentalData.note || "";
+    }
 
     const data = await updateRental(id, payload, bearerToken);
     return { success: true, data };

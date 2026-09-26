@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, Suspense, useMemo } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRentalsSync, updateRentalStatus } from "@/lib/stores/rentalsStore";
 import { createRentalStatusLogAction } from "@/app/actions/rentalStatusLogs";
+import { updateRentalAction } from "@/app/actions/rentals";
 import { formatRupiah } from "@/lib/utils/hitungBiaya";
 import {
   BillingSummary,
@@ -14,14 +15,51 @@ import {
   ProofUploader,
 } from "@/components/features/payment";
 
+function compressImage(file, maxWidth = 600, quality = 0.6) {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || !window.FileReader) {
+      resolve("");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function PaymentContent() {
   const searchParams = useSearchParams();
   const rentalIdParam = searchParams.get("rentalId") || "";
   const rentals = useRentalsSync();
 
-  // Cari rental yang dipilih atau fallback ke rental berstatus Disetujui
+  // Cari rental yang dipilih atau fallback ke rental berstatus Disetujui/diverifikasi
   const approvedRentals = useMemo(
-    () => rentals.filter((r) => r.status === "Disetujui"),
+    () =>
+      rentals.filter(
+        (r) =>
+          r.status === "Disetujui" ||
+          r.status === "diverifikasi" ||
+          r.status === "aktif"
+      ),
     [rentals]
   );
 
@@ -40,14 +78,13 @@ function PaymentContent() {
 
   // File upload state
   const [proofFile, setProofFile] = useState(null);
-  const [proofPreview, setProofPreview] = useState(
-    selectedRental?.payment_proof || null
-  );
+  const [uploadedPreview, setUploadedPreview] = useState(null);
+  const proofPreview = uploadedPreview || selectedRental?.payment_proof || null;
+
   const [userNotes, setUserNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submittedSuccess, setSubmittedSuccess] = useState(
-    Boolean(selectedRental?.payment_proof)
-  );
+  const [submittedManually, setSubmittedManually] = useState(false);
+  const submittedSuccess = submittedManually || Boolean(selectedRental?.payment_proof);
   const [copied, setCopied] = useState(false);
 
   // Generate nomor VA dummy berdasarkan rental ID
@@ -57,7 +94,7 @@ function PaymentContent() {
     return `12800${numPart.padStart(6, "0")}91`;
   }, [selectedRental]);
 
-  function handleFileChange(e) {
+  async function handleFileChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -67,11 +104,16 @@ function PaymentContent() {
     }
 
     setProofFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setProofPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedDataUrl = await compressImage(file);
+      setUploadedPreview(compressedDataUrl);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setUploadedPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   }
 
   function handleCopyVA() {
@@ -108,32 +150,64 @@ function PaymentContent() {
       changed_by: selectedRental.name || "Peminjam",
     };
 
-    // 1. Update state di rentalsStore
+    // 1. Update state di rentalsStore (dan persistent cache)
     updateRentalStatus(selectedRental.id, "Disetujui", patchData, auditEntry);
 
-    // 2. Catat audit status log
+    const backendId = selectedRental.backendId || Number(selectedRental.id) || 1;
+    const userDbId = selectedRental.user_id ? Number(selectedRental.user_id) : 4;
+
+    // 2. Catat audit status log ke tabel rental_status_logs
     try {
       await createRentalStatusLogAction({
-        rental_id: selectedRental.backendId || 1,
-        status: "diverifikasi",
-        notes: auditEntry.notes,
-        changed_by: selectedRental.name || "Peminjam",
+        rental_id: backendId,
+        step: "diverifikasi",
+        note: auditEntry.notes,
+        changed_by: userDbId,
       });
     } catch (err) {
       console.warn("Audit status log deferred:", err.message);
     }
 
+    // 3. Update catatan di tabel rentals backend dengan data JSON lengkap (bukti bayar, metode, tanggal)
+    try {
+      let baseOrderNote = selectedRental.notes || selectedRental.note || "";
+      try {
+        if (typeof baseOrderNote === "string" && baseOrderNote.startsWith("{") && baseOrderNote.endsWith("}")) {
+          const parsed = JSON.parse(baseOrderNote);
+          baseOrderNote = parsed.order_note || parsed.note || "";
+        }
+      } catch { }
+
+      const dbNotesPayload = JSON.stringify({
+        order_note: baseOrderNote || `Pengajuan sewa: ${selectedRental.item}`,
+        sub_status: "disetujui",
+        payment_proof: proofPreview,
+        payment_method: paymentMethodLabel,
+        payment_status: "menunggu_verifikasi",
+        payment_date: new Date().toLocaleString("id-ID"),
+        payment_notes: userNotes || "",
+      });
+
+      await updateRentalAction(backendId, {
+        status: "aktif",
+        notes: dbNotesPayload,
+      });
+    } catch (err) {
+      console.warn("Update rental notes in DB deferred:", err.message);
+    }
+
     setSubmitting(false);
-    setSubmittedSuccess(true);
+    setSubmittedManually(true);
+    alert("✓ Bukti transfer pembayaran berhasil diunggah dan disimpan ke database sistem! Admin sekarang dapat memverifikasi pembayaran Anda.");
   }
 
   // Pesan WhatsApp click-to-chat
   const waMessage = selectedRental
     ? encodeURIComponent(
-        `Halo Admin NEXORA, saya sudah melakukan pembayaran untuk peminjaman ${selectedRental.id} (${selectedRental.item}) sebesar ${formatRupiah(
-          selectedRental.total || selectedRental.total_price || 0
-        )}. Bukti transfer telah saya unggah di sistem. Mohon bantuannya untuk verifikasi agar alat siap diambil. Terima kasih!`
-      )
+      `Halo Admin NEXORA, saya sudah melakukan pembayaran untuk peminjaman ${selectedRental.id} (${selectedRental.item}) sebesar ${formatRupiah(
+        selectedRental.total || selectedRental.total_price || 0
+      )}. Bukti transfer telah saya unggah di sistem. Mohon bantuannya untuk verifikasi agar alat siap diambil. Terima kasih!`
+    )
     : "";
   const waUrl = `https://wa.me/6281234567890?text=${waMessage}`;
 

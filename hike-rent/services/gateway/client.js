@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://hmif.if.unram.ac.id/api/v2";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://hmif.if.unram.ac.id/api/v3";
 export const PROJECT = process.env.NEXT_PUBLIC_PROJECT_ID || "hikerent";
 export const API_KEY =
   process.env.NEXT_PUBLIC_API_KEY || "pk_hikerent_da4b2b680ab481f4";

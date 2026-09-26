@@ -187,7 +187,7 @@ function RekomendasiContent() {
               Belum ada paket bundling aktif di database backend.
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {officialPackages.map((pkg) => {
                 const itemsInPkg = packageItems.filter((it) => it.package_id === pkg.id);
 

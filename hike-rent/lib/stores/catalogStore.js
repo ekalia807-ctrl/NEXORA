@@ -130,10 +130,14 @@ export function addCatalogItem(item) {
   const newItem = {
     ...item,
     id: uniqueId,
-    price: Number(item.price) || 0,
+    slug: item.slug || slugify(item.name || "alat-baru"),
+    price: Number(item.price ?? item.price_per_day) || 0,
     unit: item.unit || "per hari",
-    stock: item.stock || "hijau",
-    category: item.category || "Lainnya",
+    stock: item.stock || item.stock_status || "hijau",
+    category: item.category || item.category_name || "Lainnya",
+    categoryId: item.categoryId || item.category_id || null,
+    totalStock: Number(item.totalStock ?? item.total_stock ?? 5),
+    availableStock: Number(item.availableStock ?? item.available_stock ?? 5),
     image: normalizedImage,
     imageUrl: normalizedImage,
   };
@@ -155,6 +159,19 @@ export function updateCatalogItem(id, patch) {
         ...patch,
         id: it.id,
         price: patch.price !== undefined ? Number(patch.price) : it.price,
+        totalStock:
+          patch.totalStock !== undefined
+            ? Number(patch.totalStock)
+            : patch.total_stock !== undefined
+            ? Number(patch.total_stock)
+            : it.totalStock,
+        availableStock:
+          patch.availableStock !== undefined
+            ? Number(patch.availableStock)
+            : patch.available_stock !== undefined
+            ? Number(patch.available_stock)
+            : it.availableStock,
+        stock: patch.stock || patch.stock_status || it.stock,
       };
       if (
         patch.image !== undefined ||
