@@ -89,6 +89,19 @@ export default function UserRiwayatPage() {
                     <h2 className="mt-2 font-display text-xl font-bold text-ink">
                       {h.item}
                     </h2>
+                    {Array.isArray(h.items) && h.items.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {h.items.map((it, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 rounded-md bg-paper border border-line px-2 py-0.5 text-xs text-ink/75 font-medium"
+                          >
+                            <span>📦</span>
+                            <span>{it.gear_name || it.name} × {it.quantity || it.jumlah || 1}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-ink/65">
                       <span>Jadwal: <strong className="text-ink">{h.date}</strong></span>
                       <span>Durasi: <strong>{h.total_days || 1} Hari</strong></span>

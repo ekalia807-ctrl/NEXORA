@@ -1,50 +1,21 @@
 "use client";
 
-import { useState, useEffect, Suspense, useMemo } from "react";
+import { useState, Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRentalsSync, updateRentalStatus } from "@/lib/stores/rentalsStore";
 import { createRentalStatusLogAction } from "@/app/actions/rentalStatusLogs";
 import { updateRentalAction } from "@/app/actions/rentals";
 import { formatRupiah } from "@/lib/utils/hitungBiaya";
+import { compressImage } from "@/lib/utils/imageCompressor";
 import {
   BillingSummary,
   PaymentMethodTabs,
   QrisView,
   BrivaView,
   ProofUploader,
+  PaymentSuccessView,
 } from "@/components/features/payment";
-
-function compressImage(file, maxWidth = 600, quality = 0.6) {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined" || !window.FileReader) {
-      resolve("");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", quality);
-        resolve(dataUrl);
-      };
-      img.onerror = () => resolve(e.target.result);
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 function PaymentContent() {
   const searchParams = useSearchParams();
@@ -212,82 +183,14 @@ function PaymentContent() {
 
   if (submittedManually) {
     return (
-      <div className="rounded-2xl border border-line bg-white/70 p-8 text-center shadow-sm backdrop-blur-md sm:p-12">
-        <span
-          className="status-dot bg-moss mx-auto block"
-          style={{ width: 16, height: 16 }}
-        />
-
-        <h1 className="mt-5 font-display text-2xl sm:text-3xl font-bold text-ink">
-          Bukti Pembayaran Berhasil Dikirim!
-        </h1>
-
-        <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-ink/65">
-          Bukti transfer pembayaran kamu telah tersimpan di sistem. Tim admin NEXORA akan segera memverifikasi transaksi ini. Setelah pembayaran diverifikasi, kamu dapat mengambil peralatan di basecamp sesuai jadwal peminjaman.
-        </p>
-
-        <div className="mx-auto mt-6 max-w-md space-y-2 rounded-xl border border-line bg-paper/60 p-5 text-left text-xs text-ink/80 shadow-sm">
-          <div className="flex justify-between border-b border-line/40 pb-2">
-            <span className="text-ink/50">ID Transaksi:</span>
-            <span className="font-mono font-semibold text-ink">{selectedRental.id}</span>
-          </div>
-          <div className="flex justify-between border-b border-line/40 pb-2">
-            <span className="text-ink/50">Peralatan Sewa:</span>
-            <span className="font-semibold text-ink">{selectedRental.item}</span>
-          </div>
-          <div className="flex justify-between border-b border-line/40 pb-2">
-            <span className="text-ink/50">Metode Pembayaran:</span>
-            <span className="font-medium text-ink">
-              {method === "qris" ? "QRIS NEXORA" : "BRIVA (BRI Virtual Account)"}
-            </span>
-          </div>
-          <div className="flex justify-between border-b border-line/40 pb-2">
-            <span className="text-ink/50">Total Pembayaran:</span>
-            <span className="font-mono font-bold text-ink">
-              {formatRupiah(selectedRental.total || selectedRental.total_price || 0)}
-            </span>
-          </div>
-          <div className="flex justify-between pt-0.5">
-            <span className="text-ink/50">Status Transaksi:</span>
-            <span className="rounded-full bg-moss/15 px-2.5 py-0.5 text-[11px] font-semibold text-moss">
-              ● Menunggu Verifikasi Admin
-            </span>
-          </div>
-
-          {proofPreview && (
-            <div className="mt-3 border-t border-line/40 pt-3">
-              <span className="block text-[11px] text-ink/50 mb-1.5">Foto Bukti Terunggah:</span>
-              <img
-                src={proofPreview}
-                alt="Bukti Transfer"
-                className="max-h-44 mx-auto rounded-lg border border-line object-contain bg-paper/50 p-1"
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/user/riwayat"
-            className="rounded-xl bg-ridge px-6 py-2.5 text-xs font-semibold text-fog shadow-sm transition-all hover:bg-ink"
-          >
-            Lihat Status di Riwayat →
-          </Link>
-          <button
-            type="button"
-            onClick={() => setSubmittedManually(false)}
-            className="rounded-xl border border-line bg-paper/60 px-5 py-2.5 text-xs font-semibold text-ink transition-all hover:bg-paper"
-          >
-            Ubah / Perbarui Bukti
-          </button>
-          <Link
-            href="/user/katalog"
-            className="rounded-xl border border-line bg-white px-5 py-2.5 text-xs font-semibold text-ink/70 transition-all hover:bg-paper"
-          >
-            Kembali ke Katalog
-          </Link>
-        </div>
-      </div>
+      <PaymentSuccessView
+        selectedRental={selectedRental}
+        method={method}
+        userNotes={userNotes}
+        proofPreview={proofPreview}
+        waUrl={waUrl}
+        onResetManual={() => setSubmittedManually(false)}
+      />
     );
   }
 
