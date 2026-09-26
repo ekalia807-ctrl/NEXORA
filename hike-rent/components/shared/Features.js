@@ -23,13 +23,13 @@ const features = [
 
 export default function Features() {
   return (
-    <section id="fitur" className="bg-ridge px-6 py-24 md:px-10 md:py-32">
-      <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-[0.8fr_1.2fr]">
-        <div className="md:sticky md:top-24 md:self-start">
-          <h2 className="font-display text-4xl font-bold leading-tight text-fog md:text-5xl">
+    <section id="fitur" className="bg-ridge px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+      <div className="mx-auto w-full max-w-7xl grid gap-12 lg:grid-cols-[0.85fr_1.15fr] items-start">
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <h2 className="font-display text-3xl font-bold leading-tight text-fog sm:text-4xl lg:text-5xl">
             Semua yang dibutuhkan buat urus alat pendakian.
           </h2>
-          <p className="mt-4 max-w-sm text-fog/65">
+          <p className="mt-4 max-w-md text-sm sm:text-base leading-relaxed text-fog/70">
             Dari cari alat sampai alat kembali ke gudang, satu platform buat
             peminjam dan penyedia.
           </p>
@@ -41,13 +41,13 @@ export default function Features() {
               key={feature.title}
               className="border-t border-fog/15 py-8 first:pt-0"
             >
-              <span className="font-mono text-xs text-amber">
+              <span className="font-mono text-xs text-amber font-semibold">
                 0{i + 1}
               </span>
               <h3 className="mt-3 font-display text-xl font-semibold text-fog">
                 {feature.title}
               </h3>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-fog/65">
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-fog/70">
                 {feature.body}
               </p>
             </div>
