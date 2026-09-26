@@ -61,7 +61,7 @@ export default function UserWishlistPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {wishlist.map((item) => {
             const isOutOfStock = item.stock === "merah";
-            const checkoutPath = `/user/checkout?alat=${encodeURIComponent(item.name || item.gear_name)}`;
+            const checkoutPath = `/user/checkout?alatId=${encodeURIComponent(item.id || item.gear_id)}`;
             const kalkulatorPath = `/user/kalkulator?alatId=${item.id || item.gear_id}`;
 
             return (

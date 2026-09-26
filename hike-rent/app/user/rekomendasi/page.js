@@ -263,14 +263,43 @@ function RekomendasiContent() {
                         </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleSewaOfficialPackage(pkg.id)}
-                        disabled={itemsInPkg.length === 0}
-                        className="w-full rounded-xl bg-ridge py-3 text-xs font-semibold text-fog hover:bg-ink transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
-                      >
-                        Sewa Paket Ini (Kalkulasi) →
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const items = packageItems.filter((it) => it.package_id === pkg.id);
+                            if (items.length === 0) {
+                              alert("Paket ini belum memiliki item alat.");
+                              return;
+                            }
+                            const paketData = items.map((it) => {
+                              const matchedGear = gear.find(
+                                (g) =>
+                                  g.id === String(it.gear_id) ||
+                                  g.name.toLowerCase().includes((it.gear_name || "").toLowerCase())
+                              );
+                              return {
+                                alatId: matchedGear ? matchedGear.id : String(it.gear_id),
+                                jumlah: it.quantity || 1,
+                              };
+                            });
+                            window.localStorage.setItem(PAKET_STORAGE_KEY, JSON.stringify(paketData));
+                            router.push("/user/kalkulator?paket=1");
+                          }}
+                          disabled={itemsInPkg.length === 0}
+                          className="flex-1 rounded-xl border border-line bg-paper/60 py-2.5 text-xs font-semibold text-ink hover:bg-paper transition-all disabled:opacity-40"
+                        >
+                          Hitung Biaya
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSewaOfficialPackage(pkg.id)}
+                          disabled={itemsInPkg.length === 0}
+                          className="flex-1 rounded-xl bg-ridge py-2.5 text-xs font-semibold text-fog hover:bg-ink transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
+                        >
+                          Ajukan Sewa →
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -398,13 +427,28 @@ function RekomendasiContent() {
               </span>
             </div>
 
-            <button
-              onClick={handleSewaPaketKustom}
-              disabled={tersedia.length === 0}
-              className="mt-6 w-full rounded-xl bg-ridge px-5 py-3.5 text-sm font-semibold text-fog transition-all duration-200 hover:bg-ink disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
-            >
-              Sewa Paket Ini (Kalkulator) →
-            </button>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const paket = tersedia.map((r) => ({ alatId: r.alat.id, jumlah: r.jumlah }));
+                  window.localStorage.setItem(PAKET_STORAGE_KEY, JSON.stringify(paket));
+                  router.push("/user/kalkulator?paket=1");
+                }}
+                disabled={tersedia.length === 0}
+                className="flex-1 rounded-xl border border-line bg-paper/60 px-5 py-3 text-xs sm:text-sm font-semibold text-ink transition-all hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Hitung di Kalkulator
+              </button>
+              <button
+                type="button"
+                onClick={handleSewaPaketKustom}
+                disabled={tersedia.length === 0}
+                className="flex-1 rounded-xl bg-ridge px-5 py-3 text-xs sm:text-sm font-semibold text-fog transition-all duration-200 hover:bg-ink disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
+              >
+                Ajukan Sewa Paket Ini →
+              </button>
+            </div>
           </div>
         </div>
       )}

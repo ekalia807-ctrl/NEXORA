@@ -8,10 +8,29 @@ import RequireAuth from "@/components/shared/RequireAuth";
 import { createRentalAction } from "@/app/actions/rentals";
 import { addRental } from "@/lib/stores/rentalsStore";
 import { useCatalog } from "@/lib/stores/catalogStore";
-import { formatRupiah, hitungBiaya } from "@/lib/utils/hitungBiaya";
+import {
+  formatRupiah,
+  hitungBiaya,
+  getTodayString,
+  validasiTanggalTerpisah,
+  hitungDurasiHari,
+} from "@/lib/utils/hitungBiaya";
 
 // Harus SAMA PERSIS dengan key yang dipakai di halaman Rekomendasi Rombongan
 const PAKET_STORAGE_KEY = "nexora_paket_rekomendasi";
+
+function getDefaultEndDate(startDateStr) {
+  try {
+    const d = new Date(`${startDateStr}T00:00:00`);
+    d.setDate(d.getDate() + 3);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  } catch {
+    return startDateStr;
+  }
+}
 
 function validateName(val) {
   const clean = (val || "").trim();
@@ -121,8 +140,28 @@ function CheckoutForm() {
     return "";
   });
 
-  const [startDate, setStartDate] = useState("2026-09-20");
-  const [endDate, setEndDate] = useState("2026-09-23");
+  const searchParams = useSearchParams();
+  const alat = searchParams.get("alat") || "";
+  const alatId = searchParams.get("alatId") || "";
+  const isPaket = searchParams.get("paket") === "1";
+  const jumlahQuery = parseInt(searchParams.get("jumlah"), 10);
+  const initialJumlah = !isNaN(jumlahQuery) && jumlahQuery > 0 ? jumlahQuery : 1;
+
+  const todayStr = getTodayString();
+  const queryStartDate = searchParams.get("startDate") || searchParams.get("tanggalMulai") || "";
+  const queryEndDate = searchParams.get("endDate") || searchParams.get("tanggalSelesai") || "";
+
+  const [startDate, setStartDate] = useState(() => {
+    if (queryStartDate && queryStartDate >= todayStr) return queryStartDate;
+    return todayStr;
+  });
+
+  const [endDate, setEndDate] = useState(() => {
+    const baseStart = queryStartDate && queryStartDate >= todayStr ? queryStartDate : todayStr;
+    if (queryEndDate && queryEndDate >= baseStart) return queryEndDate;
+    return getDefaultEndDate(baseStart);
+  });
+
   const [loading, setLoading] = useState(false);
   const [ktp, setKtp] = useState(null);
   const [ktpPreview, setKtpPreview] = useState("");
@@ -131,11 +170,8 @@ function CheckoutForm() {
   const nameInputRef = useRef(null);
   const whatsappInputRef = useRef(null);
   const ktpInputRef = useRef(null);
-
-  const searchParams = useSearchParams();
-  const alat = searchParams.get("alat") || "";
-  const alatId = searchParams.get("alatId") || "";
-  const isPaket = searchParams.get("paket") === "1";
+  const startDateInputRef = useRef(null);
+  const endDateInputRef = useRef(null);
 
   // ==========================================
   // BACA DATA PAKET ROMBONGAN DARI LOCALSTORAGE
@@ -164,7 +200,7 @@ function CheckoutForm() {
   //
   // Urutan prioritas sumber data:
   //  1. Paket rombongan (?paket=1 + localStorage)
-  //  2. Satu alat dari Katalog (?alatId=...) → dicocokkan ke katalog untuk dapat harga
+  //  2. Satu alat dari Katalog/Kalkulator (?alatId=...) → dicocokkan ke katalog untuk dapat harga & jumlah
   //  3. Peninggalan lama (?alat=NamaAlat, tanpa id) → dicocokkan by nama kalau bisa
   //  4. Tidak ada sama sekali → array kosong (checkout tidak boleh nebak-nebak alat)
   // ==========================================
@@ -184,7 +220,7 @@ function CheckoutForm() {
       });
     }
 
-    // 2. Satu alat dari Katalog, dikirim via id (cara baru & disarankan).
+    // 2. Satu alat dari Katalog atau Kalkulator, dikirim via id & jumlah
     if (alatId) {
       const matched = gear.find((g) => String(g.id) === String(alatId));
 
@@ -192,7 +228,7 @@ function CheckoutForm() {
         {
           id: alatId,
           name: matched ? matched.name : alat || `Alat #${alatId}`,
-          jumlah: 1,
+          jumlah: initialJumlah,
           pricePerHari: matched ? matched.price : 40000,
         },
       ];
@@ -219,17 +255,32 @@ function CheckoutForm() {
     return [];
   }, [isPaket, rawPaket, alatId, alat, gear]);
 
-  // Jumlah hari sewa — dipakai untuk tampilan harga & saat submit,
-  // jadi cukup dihitung sekali di sini.
+  // Jumlah hari sewa — dihitung aman dari tanggal mulai & selesai
   const diffDays = useMemo(() => {
-    return Math.max(
-      1,
-      Math.ceil(
-        (new Date(endDate).getTime() - new Date(startDate).getTime()) /
-        (1000 * 60 * 60 * 24)
-      )
-    );
+    return hitungDurasiHari(startDate, endDate) || 1;
   }, [startDate, endDate]);
+
+  function handleStartDateChange(e) {
+    const val = e.target.value;
+    setStartDate(val);
+    const { startError, endError } = validasiTanggalTerpisah(val, endDate);
+    setErrors((prev) => ({
+      ...prev,
+      startDate: startError,
+      endDate: endError,
+    }));
+  }
+
+  function handleEndDateChange(e) {
+    const val = e.target.value;
+    setEndDate(val);
+    const { startError, endError } = validasiTanggalTerpisah(startDate, val);
+    setErrors((prev) => ({
+      ...prev,
+      startDate: startError,
+      endDate: endError,
+    }));
+  }
 
   // Total harga paket rombongan (berdasarkan harga asli tiap alat × jumlah hari).
   const totalPaketHarga = useMemo(() => {
@@ -479,6 +530,15 @@ function CheckoutForm() {
       newErrors.ktp = ktpCheck.message;
     }
 
+    // Validasi Tanggal (Task 1: Tanggal tidak boleh sudah lewat & kembali >= mulai)
+    const { startError, endError } = validasiTanggalTerpisah(startDate, endDate);
+    if (startError) {
+      newErrors.startDate = startError;
+    }
+    if (endError) {
+      newErrors.endDate = endError;
+    }
+
     // Tampilkan semua error.
     setErrors(newErrors);
 
@@ -487,7 +547,19 @@ function CheckoutForm() {
     // ==========================================
 
     if (Object.keys(newErrors).length > 0) {
-      if (newErrors.name && nameInputRef.current) {
+      if (newErrors.startDate && startDateInputRef.current) {
+        startDateInputRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        startDateInputRef.current.focus();
+      } else if (newErrors.endDate && endDateInputRef.current) {
+        endDateInputRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        endDateInputRef.current.focus();
+      } else if (newErrors.name && nameInputRef.current) {
         nameInputRef.current.scrollIntoView({
           behavior: "smooth",
           block: "center",
@@ -724,9 +796,17 @@ function CheckoutForm() {
             </p>
           </div>
 
-          <span className="rounded-full bg-ridge px-3.5 py-1 font-mono text-xs font-medium text-fog shadow-sm">
-            Panel Peminjam
-          </span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/user/katalog"
+              className="rounded-xl border border-line bg-paper/60 px-4 py-2 text-xs font-semibold text-ink hover:bg-paper transition-all"
+            >
+              ← Kembali ke Katalog
+            </Link>
+            <span className="rounded-full bg-ridge px-3.5 py-1 font-mono text-xs font-medium text-fog shadow-sm">
+              Panel Peminjam
+            </span>
+          </div>
         </div>
       </div>
 
@@ -739,7 +819,7 @@ function CheckoutForm() {
                 1. Jadwal & Data Peminjam
               </h2>
               <p className="mt-0.5 text-xs text-ink/65">
-                Pastikan nama dan nomor WhatsApp sesuai dengan identitas asli untuk verifikasi basecamp.
+                Pastikan tanggal peminjaman dan identitas sesuai untuk verifikasi basecamp.
               </p>
             </div>
 
@@ -750,12 +830,26 @@ function CheckoutForm() {
                   Tanggal Mulai Sewa
                 </label>
                 <input
+                  ref={startDateInputRef}
                   type="date"
                   required
+                  min={todayStr}
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+                  onChange={handleStartDateChange}
+                  className={`mt-1.5 w-full rounded-xl border px-4 py-2.5 text-sm text-ink outline-none transition-all ${
+                    errors.startDate
+                      ? "border-alert bg-alert/5 focus:border-alert focus:bg-white focus:ring-2 focus:ring-alert/20"
+                      : "border-line bg-paper/60 focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+                  }`}
                 />
+                {errors.startDate && (
+                  <p id="startDate-error" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert">
+                    <svg className="h-3.5 w-3.5 shrink-0 text-alert" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span>{errors.startDate}</span>
+                  </p>
+                )}
               </div>
 
               <div>
@@ -763,12 +857,26 @@ function CheckoutForm() {
                   Tanggal Selesai Sewa
                 </label>
                 <input
+                  ref={endDateInputRef}
                   type="date"
                   required
+                  min={startDate || todayStr}
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+                  onChange={handleEndDateChange}
+                  className={`mt-1.5 w-full rounded-xl border px-4 py-2.5 text-sm text-ink outline-none transition-all ${
+                    errors.endDate
+                      ? "border-alert bg-alert/5 focus:border-alert focus:bg-white focus:ring-2 focus:ring-alert/20"
+                      : "border-line bg-paper/60 focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+                  }`}
                 />
+                {errors.endDate && (
+                  <p id="endDate-error" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert">
+                    <svg className="h-3.5 w-3.5 shrink-0 text-alert" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span>{errors.endDate}</span>
+                  </p>
+                )}
               </div>
             </div>
 
