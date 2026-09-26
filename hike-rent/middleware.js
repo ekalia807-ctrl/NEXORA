@@ -24,7 +24,7 @@ export function middleware(request) {
       return NextResponse.redirect(loginUrl);
     }
     if (!isAdmin) {
-      return NextResponse.redirect(new URL("/user/dashboard", request.url));
+      return NextResponse.redirect(new URL("/user/katalog", request.url));
     }
   }
 
@@ -39,7 +39,7 @@ export function middleware(request) {
 
   // 3. Jika sudah login, cegah buka halaman login / register lagi
   if ((pathname === "/login" || pathname === "/register") && isAuthenticated) {
-    const target = isAdmin ? "/admin/dashboard" : "/user/dashboard";
+    const target = isAdmin ? "/admin/dashboard" : "/user/katalog";
     return NextResponse.redirect(new URL(target, request.url));
   }
 

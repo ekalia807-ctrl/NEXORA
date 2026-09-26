@@ -62,7 +62,7 @@ function LoginForm() {
       if (role === "admin") {
         router.push("/admin/dashboard");
       } else {
-        router.push(redirect || "/user/dashboard");
+        router.push(redirect || "/user/katalog");
       }
     } catch (err) {
       setError(err.message || "Gagal menghubungi server database kampus. Silakan coba lagi.");
@@ -88,40 +88,42 @@ function LoginForm() {
     : "/register";
 
   return (
-    <section className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-6 py-12">
-      <div className="border border-line bg-white/40 p-8 shadow-sm">
+    <section className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-4 sm:px-6 py-12">
+      <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
         <div className="text-center">
-          <h1 className="font-display text-3xl font-bold text-ink">Masuk</h1>
-          <p className="mt-2 text-sm text-ink/65">
-            Masuk ke NEXORA menggunakan akun yang terdaftar di basis data.
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+            Masuk
+          </h1>
+          <p className="mt-1.5 text-sm text-ink/65 leading-relaxed">
+            Masuk ke akun Anda untuk menyewa alat pendakian atau mengelola operasional.
           </p>
         </div>
 
         {redirect && (
-          <div className="mt-5 rounded-sm border border-amber/40 bg-amber/15 p-3 text-xs text-ink/80">
+          <div className="mt-5 rounded-xl border border-amber/40 bg-amber/15 p-3.5 text-xs text-ink/80 font-medium">
             Silakan masuk terlebih dahulu untuk melanjutkan pengajuan sewa alat Anda.
           </div>
         )}
 
         {/* Demo Account Helper */}
-        <div className="mt-4 rounded-sm border border-line/60 bg-paper/60 p-3 text-xs">
-          <div className="flex items-center justify-between font-semibold text-ink/70 mb-1.5">
-            <span>Akun Uji Coba Terdaftar:</span>
+        <div className="mt-4 rounded-xl border border-line/70 bg-paper/60 p-3.5 text-xs shadow-inner text-center">
+          <div className="flex items-center justify-center font-semibold text-ink/75 mb-2.5">
+            <span>Akun Uji Coba:</span>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center justify-center gap-2.5 flex-wrap">
             <button
               type="button"
               onClick={() => fillAccount("admin")}
-              className="rounded border border-line bg-white px-2 py-1 text-[11px] font-medium text-ink hover:border-ridge transition-colors"
+              className="rounded-full border border-line bg-white px-4 py-1 text-xs font-semibold text-ink shadow-2xs hover:border-ridge hover:bg-paper transition-all"
             >
-              Admin (admin@hikerent.com)
+              Admin
             </button>
             <button
               type="button"
               onClick={() => fillAccount("user")}
-              className="rounded border border-line bg-white px-2 py-1 text-[11px] font-medium text-ink hover:border-ridge transition-colors"
+              className="rounded-full border border-line bg-white px-4 py-1 text-xs font-semibold text-ink shadow-2xs hover:border-ridge hover:bg-paper transition-all"
             >
-              User (user@hikerent.com)
+              User
             </button>
           </div>
         </div>
@@ -129,25 +131,25 @@ function LoginForm() {
         {error && (
           <div
             role="alert"
-            className="mt-4 rounded-sm border border-alert/40 bg-alert/10 p-3 text-xs text-alert flex items-start justify-between"
+            className="mt-4 rounded-xl border border-alert/30 bg-alert/10 p-3.5 text-xs text-alert flex items-start justify-between shadow-2xs"
           >
             <div>
-              <p className="font-semibold">Login Gagal</p>
+              <p className="font-bold">Login Gagal</p>
               <p className="mt-0.5">{error}</p>
             </div>
             <button
               type="button"
               onClick={() => setError(null)}
-              className="text-xs opacity-60 hover:opacity-100 ml-2"
+              className="text-xs opacity-60 hover:opacity-100 ml-2 font-bold"
             >
               ✕
             </button>
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="mt-5 space-y-5">
+        <form onSubmit={handleLogin} className="mt-5 space-y-4">
           <label className="block">
-            <span className="text-sm text-ink/70">Email</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-ink/70">Alamat Email</span>
             <input
               type="email"
               required
@@ -158,15 +160,16 @@ function LoginForm() {
                 if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
               }}
               placeholder="nama@email.com"
-              className={`mt-1.5 w-full border bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors ${
-                errors.email ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
-              } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+              className={`mt-1.5 w-full rounded-xl border bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all ${errors.email
+                  ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
+                  : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+                } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
             />
-            {errors.email && <p className="mt-1 text-xs text-alert">{errors.email}</p>}
+            {errors.email && <p className="mt-1 text-xs text-alert font-medium">{errors.email}</p>}
           </label>
 
           <label className="block">
-            <span className="text-sm text-ink/70">Kata sandi</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-ink/70">Kata Sandi</span>
             <input
               type="password"
               required
@@ -177,19 +180,19 @@ function LoginForm() {
                 if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
               }}
               placeholder="••••••••"
-              className={`mt-1.5 w-full border bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors ${
-                errors.password ? "border-alert focus:border-alert" : "border-line focus:border-ridge"
-              } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+              className={`mt-1.5 w-full rounded-xl border bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all ${errors.password
+                  ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
+                  : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+                } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
             />
-            {errors.password && <p className="mt-1 text-xs text-alert">{errors.password}</p>}
+            {errors.password && <p className="mt-1 text-xs text-alert font-medium">{errors.password}</p>}
           </label>
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full rounded-sm bg-ridge py-2.5 text-center text-sm font-medium text-fog transition-all ${
-              loading ? "opacity-75 cursor-not-allowed" : "hover:bg-ink active:scale-[0.99]"
-            }`}
+            className={`w-full rounded-xl bg-ridge py-3 text-center text-sm font-semibold text-fog shadow-sm transition-all ${loading ? "opacity-75 cursor-not-allowed" : "hover:bg-ink active:scale-[0.99]"
+              }`}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -197,14 +200,14 @@ function LoginForm() {
                 <span>Memverifikasi akun...</span>
               </span>
             ) : (
-              "Masuk"
+              "Masuk ke Akun"
             )}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-ink/60">
+        <p className="mt-6 text-center text-xs text-ink/65">
           Belum punya akun?{" "}
-          <Link href={registerHref} className="font-medium text-ink underline underline-offset-4 hover:text-amber">
+          <Link href={registerHref} className="font-semibold text-ink underline underline-offset-4 hover:text-amber transition-colors">
             Daftar sekarang
           </Link>
         </p>
@@ -212,6 +215,7 @@ function LoginForm() {
     </section>
   );
 }
+
 
 export default function LoginPage() {
   return (

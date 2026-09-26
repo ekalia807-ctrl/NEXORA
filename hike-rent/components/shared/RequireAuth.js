@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useRole } from "@/lib/useRole";
+import { useRole } from "@/lib/hooks/useRole";
 import { getMeAction } from "@/app/actions/auth";
 
 export default function RequireAuth({ children, allow }) {
@@ -37,7 +37,7 @@ export default function RequireAuth({ children, allow }) {
   }, [role]);
 
   const allowed = role && (!allow || allow.includes(role));
-  const roleHome = role === "admin" ? "/admin/dashboard" : "/user/dashboard";
+  const roleHome = role === "admin" ? "/admin/dashboard" : "/user/katalog";
 
   useEffect(() => {
     if (checkingServer) return;

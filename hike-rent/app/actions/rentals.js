@@ -7,7 +7,8 @@ import {
   updateRental,
   deleteRental,
 } from "@/services/gateway/rentals";
-import { getCurrentSession } from "@/lib/session";
+import { getCurrentSession } from "@/lib/server/session";
+import { createRentalStatusLogAction } from "./rentalStatusLogs";
 
 /**
  * Mengambil daftar seluruh transaksi rental
@@ -15,8 +16,23 @@ import { getCurrentSession } from "@/lib/session";
 export async function fetchRentalsAction() {
   try {
     const { token } = await getCurrentSession();
-    const data = await getRentals(token);
-    return { success: true, data: Array.isArray(data) ? data : [] };
+    const bearerToken = token || process.env.NEXT_PUBLIC_DEV_TOKEN || "";
+    const list = await getRentals(bearerToken);
+    if (!Array.isArray(list)) return { success: false, data: [] };
+
+    // Ambil detail (notes, items) untuk setiap rental secara parallel
+    const detailed = await Promise.all(
+      list.map(async (r) => {
+        try {
+          const detail = await getRentalById(r.id, bearerToken);
+          return { ...r, ...detail };
+        } catch {
+          return r;
+        }
+      })
+    );
+
+    return { success: true, data: detailed };
   } catch (err) {
     return { success: false, error: err.message, data: [] };
   }
@@ -28,18 +44,45 @@ export async function fetchRentalsAction() {
 export async function createRentalAction(rentalData) {
   try {
     const { token, user } = await getCurrentSession();
+    const bearerToken = token || process.env.NEXT_PUBLIC_DEV_TOKEN || "";
+    const userId = Number(rentalData.user_id || user?.id || 7);
+
+    // Format status enum sesuai skema backend: "menunggu_verifikasi" | "aktif" | "selesai" | "ditolak"
+    let statusEnum = "menunggu_verifikasi";
+    if (rentalData.status === "aktif" || rentalData.status === "Disetujui" || rentalData.status === "Diambil") {
+      statusEnum = "aktif";
+    } else if (rentalData.status === "selesai" || rentalData.status === "Selesai") {
+      statusEnum = "selesai";
+    } else if (rentalData.status === "ditolak" || rentalData.status === "Ditolak") {
+      statusEnum = "ditolak";
+    }
+
     const payload = {
-      user_id: Number(rentalData.user_id || user?.id || 1),
+      order_code: rentalData.order_code || `ORD-${Date.now().toString().slice(-6)}`,
+      user_id: userId,
       start_date: rentalData.start_date,
       end_date: rentalData.end_date,
-      total_days: Number(rentalData.total_days) || 1,
-      total_price: Number(rentalData.total_price) || 0,
-      status: rentalData.status || "diajukan",
-      ktp_number: rentalData.ktp_number || "",
-      note: rentalData.note || "",
+      duration_nights: Number(rentalData.duration_nights || rentalData.total_days || 1),
+      total_amount: Number(rentalData.total_amount || rentalData.total_price || 0),
+      status: statusEnum,
+      ktp_snapshot_url: rentalData.ktp_snapshot_url || "",
+      notes: rentalData.notes || rentalData.note || "",
     };
 
-    const data = await createRental(payload, token);
+    const data = await createRental(payload, bearerToken);
+
+    // Rekam log inisial 'diajukan' ke tabel rental_status_logs
+    if (data?.id) {
+      try {
+        await createRentalStatusLogAction({
+          rental_id: data.id,
+          step: "diajukan",
+          note: `Pengajuan sewa baru: ${payload.notes || "Peralatan pendakian"}`,
+          changed_by: userId,
+        });
+      } catch { }
+    }
+
     return { success: true, data };
   } catch (err) {
     return { success: false, error: err.message };
@@ -52,7 +95,52 @@ export async function createRentalAction(rentalData) {
 export async function updateRentalAction(id, rentalData) {
   try {
     const { token } = await getCurrentSession();
-    const data = await updateRental(id, rentalData, token);
+    const bearerToken = token || process.env.NEXT_PUBLIC_DEV_TOKEN || "";
+
+    // Petakan status ke enum skema backend: "menunggu_verifikasi" | "aktif" | "selesai" | "ditolak"
+    let mappedStatus = rentalData.status;
+    if (
+      mappedStatus === "Disetujui" ||
+      mappedStatus === "Diambil" ||
+      mappedStatus === "diverifikasi" ||
+      mappedStatus === "diambil" ||
+      mappedStatus === "aktif"
+    ) {
+      mappedStatus = "aktif";
+    } else if (
+      mappedStatus === "Menunggu verifikasi" ||
+      mappedStatus === "diajukan" ||
+      mappedStatus === "menunggu_verifikasi"
+    ) {
+      mappedStatus = "menunggu_verifikasi";
+    } else if (mappedStatus === "Selesai" || mappedStatus === "dikembalikan" || mappedStatus === "selesai") {
+      mappedStatus = "selesai";
+    } else if (mappedStatus === "Ditolak" || mappedStatus === "dibatalkan" || mappedStatus === "ditolak") {
+      mappedStatus = "ditolak";
+    }
+
+    const allowedKeys = [
+      "status",
+      "notes",
+      "rejection_reason",
+      "ktp_snapshot_url",
+      "total_amount",
+      "duration_nights",
+      "start_date",
+      "end_date",
+    ];
+    const payload = {};
+    for (const key of allowedKeys) {
+      if (rentalData[key] !== undefined) {
+        payload[key] = rentalData[key];
+      }
+    }
+    payload.status = mappedStatus;
+    if (rentalData.notes !== undefined || rentalData.note !== undefined) {
+      payload.notes = rentalData.notes || rentalData.note || "";
+    }
+
+    const data = await updateRental(id, payload, bearerToken);
     return { success: true, data };
   } catch (err) {
     return { success: false, error: err.message };

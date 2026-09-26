@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://hmif.if.unram.ac.id/api/v2";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://hmif.if.unram.ac.id/api/v3";
 export const PROJECT = process.env.NEXT_PUBLIC_PROJECT_ID || "hikerent";
 export const API_KEY =
   process.env.NEXT_PUBLIC_API_KEY || "pk_hikerent_da4b2b680ab481f4";
@@ -28,6 +28,10 @@ export async function apiFetch(endpoint, options = {}) {
     }
   }
 
+  if (!bearerToken && process.env.NEXT_PUBLIC_DEV_TOKEN) {
+    bearerToken = process.env.NEXT_PUBLIC_DEV_TOKEN;
+  }
+
   const headers = {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -41,9 +45,20 @@ export async function apiFetch(endpoint, options = {}) {
     headers["Authorization"] = `Bearer ${bearerToken}`;
   }
 
+  // Bypass Apache HTTP server restrictions that block PUT/PATCH/DELETE with 403 Forbidden
+  const rawMethod = (options.method || "GET").toUpperCase();
+  let fetchMethod = rawMethod;
+  const overrideHeaders = {};
+
+  if (rawMethod === "PUT" || rawMethod === "PATCH" || rawMethod === "DELETE") {
+    fetchMethod = "POST";
+    overrideHeaders["X-HTTP-Method-Override"] = rawMethod;
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: { ...headers, ...options.headers },
+    method: fetchMethod,
+    headers: { ...headers, ...overrideHeaders, ...options.headers },
   });
 
   const data = await res.json().catch(() => ({}));

@@ -3,19 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useRole } from "@/lib/useRole";
+import { useRole } from "@/lib/hooks/useRole";
 import { logoutAction } from "@/app/actions/auth";
 
 // Menu lengkap khusus peminjam mencakup seluruh rute /user/*
 const menuUser = [
-  { href: "/user/dashboard", label: "Ringkasan" },
-  { href: "/user/dashboard/profil", label: "Profil Saya" },
   { href: "/user/katalog", label: "Katalog Alat" },
+  { href: "/user/rekomendasi", label: "Rekomendasi Rombongan" },
   { href: "/user/wishlist", label: "Wishlist Saya" },
   { href: "/user/kalkulator", label: "Kalkulator Biaya" },
   { href: "/user/checkout", label: "Checkout Sewa" },
   { href: "/user/riwayat", label: "Riwayat & Status" },
-  { href: "/user/rekomendasi", label: "Rekomendasi Rombongan" },
+  { href: "/user/profil", label: "Profil Saya" },
 ];
 
 export default function DashboardSidebar() {
@@ -61,10 +60,7 @@ export default function DashboardSidebar() {
       {/* Navigasi Panel User */}
       <nav className={`${open ? "flex" : "hidden"} flex-col gap-1 p-3 lg:flex`}>
         {menuUser.map((item) => {
-          const active =
-            item.href === "/user/dashboard"
-              ? pathname === "/user/dashboard"
-              : pathname === item.href || pathname?.startsWith(item.href + "/");
+          const active = pathname === item.href || pathname?.startsWith(item.href + "/");
 
           return (
             <Link

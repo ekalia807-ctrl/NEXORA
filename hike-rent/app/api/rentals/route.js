@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRentals, createRental } from "@/services/gateway/rentals";
+import { getRentals, getRentalById, createRental } from "@/services/gateway/rentals";
 import { cookies } from "next/headers";
 
 /**
@@ -14,7 +14,20 @@ export async function GET(request) {
       cookieStore.get("session_token")?.value;
 
     const data = await getRentals(token);
-    return NextResponse.json(data, { status: 200 });
+    if (!Array.isArray(data)) return NextResponse.json([], { status: 200 });
+
+    const detailed = await Promise.all(
+      data.map(async (r) => {
+        try {
+          const detail = await getRentalById(r.id, token);
+          return { ...r, ...detail };
+        } catch {
+          return r;
+        }
+      })
+    );
+
+    return NextResponse.json(detailed, { status: 200 });
   } catch (err) {
     return NextResponse.json(
       { error: "Gagal mengambil data rental", message: err.message },

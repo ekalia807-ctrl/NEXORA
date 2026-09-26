@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRentalsSync } from "@/lib/rentalsStore";
-import { useCatalogSync } from "@/lib/catalogStore";
+import { useRentalsSync } from "@/lib/stores/rentalsStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
 
 export default function AdminReportsPage() {
   const rentals = useRentalsSync();
@@ -57,45 +57,65 @@ export default function AdminReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="border border-line bg-white/40 p-6">
-        <div className="flex items-center justify-between">
-          <h1 className="font-display text-2xl font-bold text-ink">Laporan</h1>
-          <span className="rounded-full bg-ridge px-3 py-1 font-mono text-xs text-fog">
-            Panel Admin
+      {/* Header Standar Admin */}
+      <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 lg:p-8 shadow-sm backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
+                Panel Admin
+              </span>
+              <span className="h-1 w-1 rounded-full bg-ink/30" />
+              <span className="font-mono text-[11px] text-ink/50">Laporan & Analitik</span>
+            </div>
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+              Laporan Performa Operasional
+            </h1>
+            <p className="mt-1.5 text-sm text-ink/65 max-w-2xl">
+              Ringkasan performa operasional NEXORA berdasarkan seluruh data transaksi sewa riil dan ketersediaan inventaris live.
+            </p>
+          </div>
+          <span className="rounded-full bg-ridge px-3.5 py-1 font-mono text-xs font-semibold text-fog shadow-sm">
+            Sistem Terintegrasi
           </span>
         </div>
-        <p className="mt-2 text-sm text-ink/65">
-          Ringkasan performa operasional NEXORA berdasarkan seluruh data transaksi sewa live.
-        </p>
       </div>
 
+      {/* Grid Kartu Metrik */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="border border-line bg-white/40 p-6">
-          <div className="font-mono text-xs text-ink/50">TOTAL PENGAJUAN</div>
-          <div className="mt-2 font-display text-2xl font-bold text-ink">{totalTransaksi}</div>
+        <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+          <div className="font-mono text-xs font-semibold tracking-wider text-ink/50 uppercase">TOTAL TRANSAKSI PENGAJUAN</div>
+          <div className="mt-2 font-display text-3xl font-bold text-ink">{totalTransaksi}</div>
+          <p className="mt-1.5 text-xs text-ink/55">Akumulasi seluruh permohonan</p>
         </div>
-        <div className="border border-line bg-white/40 p-6">
-          <div className="font-mono text-xs text-ink/50">TOTAL PEMINJAM</div>
-          <div className="mt-2 font-display text-2xl font-bold text-ink">{uniqueUsers}</div>
+        <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+          <div className="font-mono text-xs font-semibold tracking-wider text-ink/50 uppercase">TOTAL PEMINJAM AKTIF</div>
+          <div className="mt-2 font-display text-3xl font-bold text-ink">{uniqueUsers}</div>
+          <p className="mt-1.5 text-xs text-ink/55">Akun terdata dalam transaksi sewa</p>
         </div>
-        <div className="border border-line bg-white/40 p-6">
-          <div className="font-mono text-xs text-ink/50">KATALOG ALAT LIVE</div>
-          <div className="mt-2 font-display text-2xl font-bold text-ink">{catalog.length}</div>
+        <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md sm:col-span-2 lg:col-span-1">
+          <div className="font-mono text-xs font-semibold tracking-wider text-ink/50 uppercase">KATALOG ALAT LIVE DI BACKEND</div>
+          <div className="mt-2 font-display text-3xl font-bold text-ink">{catalog.length}</div>
+          <p className="mt-1.5 text-xs text-ink/55">Unit alat terdaftar di database</p>
         </div>
       </div>
 
+      {/* Grid Analisis Status & Kategori */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="border border-line bg-white/40 p-6">
-          <h2 className="font-display text-lg font-semibold text-ink">
-            Status Pengajuan
-          </h2>
-          <div className="mt-4 space-y-3">
+        <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+          <div className="border-b border-line/60 pb-3 flex items-center justify-between">
+            <h2 className="font-display text-base font-bold text-ink">
+              Distribusi Status Pengajuan
+            </h2>
+            <span className="font-mono text-xs text-ink/50">Komposisi</span>
+          </div>
+          <div className="mt-4 space-y-3.5">
             {Object.entries(statusBreakdown).map(([status, count]) => (
               <div key={status} className="flex items-center justify-between text-sm">
-                <span className="text-ink/70">{status}</span>
-                <span className="font-mono text-ink">
+                <span className="font-medium text-ink/75">{status}</span>
+                <span className="font-mono font-semibold text-ink">
                   {count}{" "}
-                  <span className="text-ink/40">
+                  <span className="text-ink/40 font-normal">
                     / {totalTransaksi > 0 ? totalTransaksi : 0}
                   </span>
                 </span>
@@ -104,23 +124,28 @@ export default function AdminReportsPage() {
           </div>
         </div>
 
-        <div className="border border-line bg-white/40 p-6">
-          <h2 className="font-display text-lg font-semibold text-ink">
-            Kategori Alat
-          </h2>
-          <div className="mt-4 space-y-3">
+        <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+          <div className="border-b border-line/60 pb-3 flex items-center justify-between">
+            <h2 className="font-display text-base font-bold text-ink">
+              Peminjaman per Kategori Alat
+            </h2>
+            <span className="font-mono text-xs text-ink/50">Paling Diminati</span>
+          </div>
+          <div className="mt-4 space-y-3.5">
             {topCategories.map(([category, count], i) => (
               <div key={category} className="flex items-center justify-between text-sm">
-                <span className="text-ink/70">
-                  <span className="mr-2 font-mono text-xs text-ink/40">#{i + 1}</span>
-                  {category}
+                <span className="text-ink/80 flex items-center gap-2">
+                  <span className="rounded-full bg-paper border border-line px-2 py-0.5 font-mono text-xs font-semibold text-ink/60">
+                    #{i + 1}
+                  </span>
+                  <span className="font-medium">{category}</span>
                 </span>
-                <span className="font-mono text-ink">{count}x disewa</span>
+                <span className="font-mono font-semibold text-ink">{count}x disewa</span>
               </div>
             ))}
             {topCategories.length === 0 && (
-              <div className="text-sm text-ink/50 py-4 text-center">
-                Belum ada data kategori.
+              <div className="text-sm text-ink/50 py-8 text-center font-mono">
+                Belum ada data kategori alat yang disewa.
               </div>
             )}
           </div>
@@ -129,3 +154,4 @@ export default function AdminReportsPage() {
     </div>
   );
 }
+

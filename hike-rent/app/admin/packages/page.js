@@ -10,7 +10,7 @@ import {
   addPackageItemAction,
   removePackageItemAction,
 } from "@/app/actions/packages";
-import { useCatalogSync } from "@/lib/catalogStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
 
 export default function AdminPackagesPage() {
   const gear = useCatalogSync();
@@ -100,21 +100,28 @@ export default function AdminPackagesPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="border border-line bg-white/40 p-6">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header Standar Admin */}
+      <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 lg:p-8 shadow-sm backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="font-display text-2xl font-bold text-ink">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
+                Panel Admin
+              </span>
+              <span className="h-1 w-1 rounded-full bg-ink/30" />
+              <span className="font-mono text-[11px] text-ink/50">Bundling & Hemat</span>
+            </div>
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
               Kelola Paket Bundling Pendakian
             </h1>
-            <p className="mt-1 text-sm text-ink/65">
-              Kelola paket hemat rombongan yang tersimpan di basis data backend HMIF UNRAM.
+            <p className="mt-1.5 text-sm text-ink/65 max-w-2xl">
+              Kelola paket hemat rombongan yang tersimpan di basis data backend HMIF UNRAM dan otomatis terhubung ke sistem rekomendasi peminjam.
             </p>
           </div>
           <Link
             href="/admin/dashboard"
-            className="rounded border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ridge transition-colors"
+            className="rounded-xl border border-line bg-white/70 px-4 py-2 text-xs font-semibold text-ink hover:border-ridge/40 hover:bg-white shadow-sm transition-all"
           >
             ← Kembali ke Dashboard
           </Link>
@@ -123,14 +130,17 @@ export default function AdminPackagesPage() {
 
       {toast && (
         <div
-          className={`rounded border p-3 text-xs flex items-center justify-between ${
+          className={`rounded-xl border p-4 text-xs font-medium flex items-center justify-between shadow-sm ${
             toast.type === "success"
-              ? "border-moss/40 bg-moss/10 text-moss font-semibold"
+              ? "border-moss/40 bg-moss/10 text-moss"
               : "border-alert/40 bg-alert/10 text-alert"
           }`}
         >
-          <span>{toast.text}</span>
-          <button type="button" onClick={() => setToast(null)} className="opacity-60 hover:opacity-100">
+          <div className="flex items-center gap-2 font-semibold">
+            <span>{toast.type === "success" ? "✓ [Sukses]" : "✕ [Gagal]"}</span>
+            <span>{toast.text}</span>
+          </div>
+          <button type="button" onClick={() => setToast(null)} className="opacity-60 hover:opacity-100 font-bold ml-4">
             ✕
           </button>
         </div>
@@ -139,48 +149,51 @@ export default function AdminPackagesPage() {
       {/* Grid: Form Buat Paket & List Paket */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form Buat Paket Baru */}
-        <div className="border border-line bg-white/40 p-6">
-          <h2 className="font-display text-lg font-bold text-ink mb-4">
-            + Tambah Paket Baru
-          </h2>
+        <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md h-fit">
+          <div className="border-b border-line/60 pb-3 mb-4">
+            <h2 className="font-display text-lg font-bold text-ink">
+              + Tambah Paket Baru
+            </h2>
+            <p className="mt-0.5 text-xs text-ink/55">Simpan bundel baru ke server backend</p>
+          </div>
           <form onSubmit={handleCreatePackage} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-ink/70">Nama Paket</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">Nama Paket</label>
               <input
                 type="text"
                 required
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Contoh: Paket Lengkap Rinjani 4P"
-                className="mt-1 w-full border border-line bg-paper px-3 py-2 text-xs text-ink outline-none focus:border-ridge"
+                className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-ink/70">Target Rombongan</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">Target Rombongan</label>
               <input
                 type="text"
                 value={form.target}
                 onChange={(e) => setForm({ ...form, target: e.target.value })}
                 placeholder="Contoh: 4 Orang / Solo"
-                className="mt-1 w-full border border-line bg-paper px-3 py-2 text-xs text-ink outline-none focus:border-ridge"
+                className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-ink/70">Deskripsi Paket</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">Deskripsi Paket</label>
               <textarea
                 rows={3}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Rincian peruntukan jalur dan perlengkapan..."
-                className="mt-1 w-full border border-line bg-paper px-3 py-2 text-xs text-ink outline-none focus:border-ridge"
+                className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full rounded-sm bg-ridge py-2 text-xs font-medium text-fog hover:bg-ink transition-colors shadow-sm"
+              className="w-full rounded-xl bg-ridge py-2.5 text-sm font-semibold text-fog hover:bg-ink shadow-sm transition-all"
             >
               Simpan Paket ke Database
             </button>
@@ -189,50 +202,55 @@ export default function AdminPackagesPage() {
 
         {/* Daftar Paket Aktif */}
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="font-display text-lg font-bold text-ink">
-            Daftar Paket di Database ({packages.length})
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-bold text-ink">
+              Daftar Paket di Database ({packages.length})
+            </h2>
+            <span className="font-mono text-xs text-ink/50">Tersinkronisasi</span>
+          </div>
 
           {loading ? (
-            <div className="border border-line bg-white/40 p-8 text-center text-xs text-ink/50">
-              Memuat data paket...
+            <div className="rounded-2xl border border-line bg-white/70 p-10 text-center text-sm text-ink/50 font-mono shadow-sm">
+              Memuat data paket bundling...
             </div>
           ) : packages.length === 0 ? (
-            <div className="border border-line bg-white/40 p-8 text-center text-xs text-ink/50">
-              Belum ada paket pendakian. Tambahkan paket pertama di samping.
+            <div className="rounded-2xl border border-dashed border-line bg-white/50 p-10 text-center text-sm text-ink/60 shadow-sm">
+              Belum ada paket pendakian. Tambahkan paket pertama melalui formulir di samping.
             </div>
           ) : (
             packages.map((pkg) => {
               const itemsInPkg = packageItems.filter((it) => it.package_id === pkg.id);
 
               return (
-                <div key={pkg.id} className="border border-line bg-white/40 p-6 shadow-sm">
-                  <div className="flex items-start justify-between">
+                <div key={pkg.id} className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+                  <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-ink/50">#{pkg.id}</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs rounded-md bg-ridge/10 px-1.5 py-0.5 text-ridge border border-ridge/20 font-semibold">
+                          #{pkg.id}
+                        </span>
                         <h3 className="font-display text-base font-bold text-ink">{pkg.name}</h3>
                         {pkg.target && (
-                          <span className="rounded-full bg-ridge px-2 py-0.5 font-mono text-[10px] text-fog">
+                          <span className="rounded-full bg-amber/20 text-amber px-2.5 py-0.5 font-mono text-[11px] font-semibold">
                             {pkg.target}
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 text-xs text-ink/65">{pkg.description || "Tidak ada deskripsi."}</p>
+                      <p className="mt-1 text-xs text-ink/65 leading-relaxed">{pkg.description || "Tidak ada rincian deskripsi."}</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={() => setSelectedPkgId(selectedPkgId === pkg.id ? null : pkg.id)}
-                        className="rounded border border-line bg-white px-2.5 py-1 text-xs font-medium text-ink hover:border-ridge transition-colors"
+                        className="rounded-lg border border-line bg-white/70 px-3 py-1.5 text-xs font-semibold text-ink hover:border-ridge hover:bg-white shadow-xs transition-all"
                       >
                         {selectedPkgId === pkg.id ? "Tutup Kelola" : "+ Tambah Alat"}
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDeletePackage(pkg.id)}
-                        className="rounded border border-alert/30 px-2.5 py-1 text-xs font-medium text-alert hover:bg-alert/10 transition-colors"
+                        className="rounded-lg border border-alert/30 px-3 py-1.5 text-xs font-semibold text-alert hover:bg-alert hover:text-fog shadow-xs transition-all"
                       >
                         Hapus
                       </button>
@@ -241,13 +259,13 @@ export default function AdminPackagesPage() {
 
                   {/* Form Tambah Item jika paket dipilih */}
                   {selectedPkgId === pkg.id && (
-                    <form onSubmit={handleAddItem} className="mt-4 border-t border-line pt-4 flex flex-wrap items-end gap-3 bg-paper/50 p-3 rounded">
-                      <div className="flex-1 min-w-[180px]">
-                        <label className="block text-[11px] font-semibold text-ink/70">Pilih Alat</label>
+                    <form onSubmit={handleAddItem} className="mt-4 rounded-xl border border-line/70 bg-paper/60 p-4 flex flex-wrap items-end gap-3 shadow-inner">
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">Pilih Alat Inventaris</label>
                         <select
                           value={itemForm.gear_id}
                           onChange={(e) => setItemForm({ ...itemForm, gear_id: e.target.value })}
-                          className="mt-1 w-full border border-line bg-white px-2 py-1.5 text-xs text-ink outline-none"
+                          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs text-ink outline-none focus:border-ridge"
                         >
                           {gear.map((g) => {
                             const val = g.backendId || (Number(g.id) ? Number(g.id) : g.id);
@@ -261,19 +279,19 @@ export default function AdminPackagesPage() {
                       </div>
 
                       <div className="w-24">
-                        <label className="block text-[11px] font-semibold text-ink/70">Jumlah</label>
+                        <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">Jumlah</label>
                         <input
                           type="number"
                           min={1}
                           value={itemForm.quantity}
                           onChange={(e) => setItemForm({ ...itemForm, quantity: e.target.value })}
-                          className="mt-1 w-full border border-line bg-white px-2 py-1.5 text-xs text-ink outline-none"
+                          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs text-ink outline-none focus:border-ridge font-mono"
                         />
                       </div>
 
                       <button
                         type="submit"
-                        className="rounded-sm bg-ridge px-3 py-1.5 text-xs font-medium text-fog hover:bg-ink"
+                        className="rounded-xl bg-ridge px-4 py-2 text-xs font-semibold text-fog hover:bg-ink shadow-sm transition-all"
                       >
                         Sematkan
                       </button>
@@ -287,19 +305,21 @@ export default function AdminPackagesPage() {
                     </p>
                     {itemsInPkg.length === 0 ? (
                       <p className="mt-1 text-xs text-ink/40 italic">
-                        Belum ada alat di paket ini. Klik &quot;+ Tambah Alat&quot; untuk memasukkan alat.
+                        Belum ada alat di paket ini. Klik &quot;+ Tambah Alat&quot; untuk menyematkan peralatan pendakian.
                       </p>
                     ) : (
                       <ul className="mt-2 divide-y divide-line/40 text-xs">
                         {itemsInPkg.map((it) => (
-                          <li key={it.id} className="py-1.5 flex items-center justify-between">
-                            <span className="font-medium text-ink">
-                              • {it.gear_name || `Alat #${it.gear_id}`} × {it.quantity} unit
+                          <li key={it.id} className="py-2 flex items-center justify-between">
+                            <span className="font-medium text-ink flex items-center gap-1.5">
+                              <span className="text-amber">●</span>
+                              <span>{it.gear_name || `Alat #${it.gear_id}`}</span>
+                              <span className="font-mono text-ink/60">× {it.quantity} unit</span>
                             </span>
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(it.id)}
-                              className="text-[11px] text-alert hover:underline"
+                              className="text-xs font-medium text-alert hover:underline"
                             >
                               Keluarkan
                             </button>

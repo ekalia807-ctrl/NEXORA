@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMyRentalsSync, statusStyle } from "@/lib/rentalsStore";
-import { formatRupiah } from "@/lib/hitungBiaya";
+import { useMyRentalsSync, statusStyle } from "@/lib/stores/rentalsStore";
+import { formatRupiah } from "@/lib/utils/hitungBiaya";
 
 export default function UserRiwayatPage() {
   const history = useMyRentalsSync();
@@ -135,8 +135,8 @@ export default function UserRiwayatPage() {
                 </div>
 
                 {/* Progress Tracker (4 Tahap: Diajukan -> Disetujui -> Diambil -> Dikembalikan) */}
-                <div className="mt-6">
-                  <div className="flex items-center">
+                <div className="mt-6 overflow-x-auto pb-1 [scrollbar-width:none]">
+                  <div className="flex items-center min-w-[280px]">
                     {(h.steps || ["Diajukan", "Disetujui", "Diambil", "Dikembalikan"]).map(
                       (step, i) => (
                         <div key={step} className="flex flex-1 items-center last:flex-none">
@@ -149,7 +149,7 @@ export default function UserRiwayatPage() {
                               }`}
                             />
                             <span
-                              className={`text-xs ${
+                              className={`text-[11px] sm:text-xs whitespace-nowrap ${
                                 i <= h.currentStep
                                   ? "text-ink font-semibold"
                                   : "text-ink/40"
@@ -160,7 +160,7 @@ export default function UserRiwayatPage() {
                           </div>
                           {i < (h.steps || []).length - 1 && (
                             <span
-                              className={`mx-2 h-0.5 flex-1 transition-colors ${
+                              className={`mx-1.5 sm:mx-2 h-0.5 flex-1 transition-colors ${
                                 i < h.currentStep ? "bg-ridge" : "bg-line"
                               }`}
                             />

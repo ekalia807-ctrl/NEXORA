@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import CatalogView from "@/components/shared/CatalogView";
-import { useRole } from "@/lib/useRole";
+import { useRole } from "@/lib/hooks/useRole";
 
 export default function UserKatalogPage() {
   const role = useRole();

@@ -2,15 +2,13 @@
 import Link from "next/link";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import RequireAuth from "@/components/shared/RequireAuth";
-import DashboardSidebar from "@/components/user/DashboardSidebar";
-import { useCatalogSync } from "@/lib/catalogStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
 import {
   formatRupiah,
   hitungDurasiHari,
   hitungBiaya,
   validasiTanggal,
-} from "@/lib/hitungBiaya";
+} from "@/lib/utils/hitungBiaya";
 
 const PAKET_STORAGE_KEY = "nexora_paket_rekomendasi";
 
@@ -20,7 +18,7 @@ function KalkulatorContent() {
   const isPaketMode = searchParams.get("paket") === "1";
 
   const gear = useCatalogSync();
-  
+
   // Inisialisasi state alatId secara aman tanpa useEffect
   const [alatId, setAlatId] = useState(() => {
     if (alatIdFromQuery) return alatIdFromQuery;
@@ -63,15 +61,15 @@ function KalkulatorContent() {
 
   const totalBiaya = durasiHari
     ? baris.reduce(
-        (sum, b) =>
-          sum +
-          hitungBiaya({
-            hargaPerHari: b.alat.price,
-            jumlah: b.jumlah,
-            durasiHari,
-          }),
-        0
-      )
+      (sum, b) =>
+        sum +
+        hitungBiaya({
+          hargaPerHari: b.alat.price,
+          jumlah: b.jumlah,
+          durasiHari,
+        }),
+      0
+    )
     : 0;
 
   function buatRingkasanTeks() {
@@ -145,57 +143,67 @@ function KalkulatorContent() {
               )}
             </select>
           </label>
-          <label className="block text-sm text-ink/70 print:text-black">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70 print:text-black">
             Jumlah unit
             <input
               type="number"
               min={1}
               value={jumlah}
               onChange={(e) => setJumlah(e.target.value)}
-              className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-ink outline-none focus:border-ridge"
+              className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
             />
           </label>
         </div>
       )}
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm text-ink/70 print:text-black">
-          Tanggal mulai
+        <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70 print:text-black">
+          Tanggal mulai sewa
           <input
             type="date"
             value={tanggalMulai}
             onChange={(e) => setTanggalMulai(e.target.value)}
-            className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-ink outline-none focus:border-ridge"
+            className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
           />
         </label>
-        <label className="block text-sm text-ink/70 print:text-black">
-          Tanggal selesai
+        <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70 print:text-black">
+          Tanggal selesai sewa
           <input
             type="date"
             value={tanggalSelesai}
             onChange={(e) => setTanggalSelesai(e.target.value)}
-            className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-ink outline-none focus:border-ridge"
+            className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
           />
         </label>
       </div>
 
-      {error && <p className="mt-3 text-sm text-alert">{error}</p>}
+      {error && (
+        <div className="mt-4 rounded-xl border border-alert/30 bg-alert/10 p-3.5 text-xs text-alert font-medium">
+          {error}
+        </div>
+      )}
 
       {!error && durasiHari > 0 && baris.length > 0 && (
-        <div className="mt-6 border-t border-line pt-6 print:border-black/20">
-          <p className="text-sm text-ink/50 print:text-black/60">
-            Durasi sewa: {durasiHari} hari
-          </p>
-          <ul className="mt-3 space-y-2">
+        <div className="mt-6 rounded-2xl border border-line bg-paper/40 p-5 sm:p-6 print:border-black/20">
+          <div className="flex items-center justify-between border-b border-line/60 pb-3">
+            <span className="font-mono text-xs uppercase tracking-wider text-amber font-semibold">
+              Rincian Biaya
+            </span>
+            <span className="font-mono text-xs text-ink/50">
+              Durasi Sewa: {durasiHari} hari
+            </span>
+          </div>
+
+          <ul className="mt-4 space-y-2">
             {baris.map((b) => (
               <li
                 key={b.alat.id}
-                className="flex items-center justify-between text-sm text-ink/80 print:text-black"
+                className="flex items-center justify-between rounded-xl bg-white/70 px-4 py-2.5 text-sm text-ink/85 border border-line/50 print:text-black"
               >
-                <span>
-                  {b.alat.name} × {b.jumlah}
+                <span className="font-medium">
+                  {b.alat.name} <span className="font-mono text-ridge">× {b.jumlah}</span>
                 </span>
-                <span>
+                <span className="font-mono font-semibold text-ink">
                   {formatRupiah(
                     hitungBiaya({
                       hargaPerHari: b.alat.price,
@@ -207,9 +215,10 @@ function KalkulatorContent() {
               </li>
             ))}
           </ul>
-          <div className="mt-4 flex items-center justify-between border-t border-line pt-4 print:border-black/20">
-            <span className="font-display text-lg font-semibold text-ink print:text-black">
-              Total
+
+          <div className="mt-5 flex items-center justify-between border-t border-line/70 pt-4 print:border-black/20">
+            <span className="font-display text-base font-semibold text-ink print:text-black">
+              Total Estimasi Biaya
             </span>
             <span className="font-display text-2xl font-bold text-ink print:text-black">
               {formatRupiah(totalBiaya)}
@@ -219,21 +228,21 @@ function KalkulatorContent() {
           <div className="mt-6 flex flex-wrap gap-3 print:hidden">
             <button
               onClick={handleSalin}
-              className="border border-line px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/50"
+              className="rounded-xl border border-line bg-white/80 px-5 py-2.5 text-xs font-semibold text-ink shadow-2xs transition-all hover:bg-paper"
             >
-              {copied ? "Tersalin!" : "Salin ringkasan"}
+              {copied ? "✓ Tersalin ke Clipboard!" : "Salin Ringkasan"}
             </button>
             <button
               onClick={() => window.print()}
-              className="border border-line px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/50"
+              className="rounded-xl border border-line bg-white/80 px-5 py-2.5 text-xs font-semibold text-ink shadow-2xs transition-all hover:bg-paper"
             >
-              Cetak / simpan PDF
+              Cetak / Simpan PDF
             </button>
             <Link
               href="/user/checkout"
-              className="rounded-sm bg-ridge px-5 py-2.5 text-sm font-medium text-fog transition-colors hover:bg-ink"
+              className="rounded-xl bg-ridge px-6 py-2.5 text-xs font-semibold text-fog shadow-sm transition-all hover:bg-ink"
             >
-              Lanjutkan ke pengajuan sewa
+              Lanjutkan ke Pengajuan Sewa →
             </Link>
           </div>
         </div>

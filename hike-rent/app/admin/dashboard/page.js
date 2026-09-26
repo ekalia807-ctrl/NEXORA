@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCatalogSync } from "@/lib/catalogStore";
-import { useRentalsSync } from "@/lib/rentalsStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
+import { useRentalsSync } from "@/lib/stores/rentalsStore";
 
 /* ---------- Tampilan saja (ikon & warna), bukan logika data ---------- */
 const iconProps = {
@@ -116,19 +116,32 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Page header */}
-      <header>
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-[#123B2E]">
-          Dashboard Admin
-        </h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink/60">
-          Ringkasan operasional HIKERENT: stok alat, pengajuan, peminjam, dan
-          pendapatan riil dari database.
-        </p>
-      </header>
+    <div className="space-y-6">
+      {/* Header Standar Admin */}
+      <div className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 lg:p-8 shadow-sm backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
+                Panel Admin
+              </span>
+              <span className="h-1 w-1 rounded-full bg-ink/30" />
+              <span className="font-mono text-[11px] text-ink/50">Ikhtisar Operasional</span>
+            </div>
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+              Dashboard Admin
+            </h1>
+            <p className="mt-1.5 text-sm text-ink/65 max-w-2xl">
+              Ringkasan operasional HIKERENT: ketersediaan inventaris alat, pengajuan sewa pending, pengguna aktif, dan rekap keuangan riil.
+            </p>
+          </div>
+          <span className="rounded-full bg-ridge px-3.5 py-1 font-mono text-xs font-semibold text-fog shadow-sm">
+            Status: Live Connected
+          </span>
+        </div>
+      </div>
 
-      {/* Stats */}
+      {/* Stats Cards */}
       <section
         aria-label="Ringkasan statistik"
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
@@ -138,7 +151,7 @@ export default function AdminDashboardPage() {
           return (
             <div
               key={s.label}
-              className="rounded-2xl border border-line bg-white p-5"
+              className="rounded-2xl border border-line bg-white/70 p-5 shadow-sm backdrop-blur-md transition-all hover:bg-white"
             >
               <div className="flex items-center gap-3">
                 <span
@@ -146,14 +159,14 @@ export default function AdminDashboardPage() {
                 >
                   {theme.icon}
                 </span>
-                <div className="text-sm text-ink/60 lowercase first-letter:uppercase">
+                <div className="text-xs font-semibold uppercase tracking-wider text-ink/60">
                   {s.label}
                 </div>
               </div>
-              <div className="mt-4 font-display text-2xl font-semibold tracking-tight text-ink">
+              <div className="mt-4 font-display text-2xl font-bold tracking-tight text-ink">
                 {s.value}
               </div>
-              <p className="mt-1.5 text-xs text-ink/50">{s.note}</p>
+              <p className="mt-1.5 text-xs text-ink/55">{s.note}</p>
             </div>
           );
         })}
@@ -161,10 +174,13 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         {/* Aktivitas terbaru */}
-        <section className="rounded-2xl border border-line bg-white p-6">
-          <h2 className="font-display text-base font-semibold text-ink">
-            Aktivitas Terbaru
-          </h2>
+        <section className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+          <div className="flex items-center justify-between border-b border-line/60 pb-3">
+            <h2 className="font-display text-base font-bold text-ink">
+              Aktivitas Transaksi Terbaru
+            </h2>
+            <span className="font-mono text-xs text-ink/50">5 Terakhir</span>
+          </div>
           {aktivitasTerbaru.length === 0 ? (
             <div className="py-10 text-center text-sm text-ink/50">
               Belum ada aktivitas transaksi sewa yang tercatat.
@@ -211,20 +227,23 @@ export default function AdminDashboardPage() {
         </section>
 
         {/* Akses cepat */}
-        <section className="rounded-2xl border border-line bg-white p-6">
-          <h2 className="font-display text-base font-semibold text-ink">
-            Akses Cepat
-          </h2>
-          <div className="-mx-2 mt-3 flex flex-col">
+        <section className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
+          <div className="border-b border-line/60 pb-3">
+            <h2 className="font-display text-base font-bold text-ink">
+              Akses Navigasi Cepat
+            </h2>
+            <p className="mt-0.5 text-xs text-ink/55">Pintasan modul administratif</p>
+          </div>
+          <div className="mt-3 flex flex-col gap-1">
             {quickLinks.map((q) => (
               <Link
                 key={q.href}
                 href={q.href}
-                className="flex items-center justify-between rounded-lg px-2 py-2.5 text-sm text-ink/80 transition-colors hover:bg-emerald-50 hover:text-emerald-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-ink/80 transition-colors hover:bg-white hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ridge"
               >
-                {q.label}
-                <span aria-hidden="true" className="text-ink/30">
-                  ›
+                <span>{q.label}</span>
+                <span aria-hidden="true" className="text-ink/40 font-mono">
+                  →
                 </span>
               </Link>
             ))}
@@ -234,3 +253,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

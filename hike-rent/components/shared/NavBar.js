@@ -30,27 +30,27 @@ const menuGuest = [
 
 // Menu khusus User (Peminjam terdaftar)
 const menuUser = [
-  { href: "/", label: "Beranda" },
-  { href: "/user/dashboard", label: "Ringkasan" },
-  { href: "/user/dashboard/profil", label: "Profil Saya" },
   { href: "/user/katalog", label: "Katalog Alat" },
+  { href: "/", label: "Beranda" },
+  { href: "/user/rekomendasi", label: "Rekomendasi Rombongan" },
   { href: "/user/wishlist", label: "Wishlist Saya" },
   { href: "/user/kalkulator", label: "Kalkulator Biaya" },
   { href: "/user/checkout", label: "Checkout Sewa" },
   { href: "/user/riwayat", label: "Riwayat & Status" },
-  { href: "/user/rekomendasi", label: "Rekomendasi Rombongan" },
+  { href: "/user/profil", label: "Profil Saya" },
 ];
 
 // Menu khusus Admin
 const menuAdmin = [
-  { href: "/", label: "Beranda" },
   { href: "/admin/dashboard", label: "Dashboard Admin" },
-  { href: "/admin/katalog", label: "Katalog Alat" },
   { href: "/admin/approval", label: "Approval Pengajuan" },
+  { href: "/admin/katalog", label: "Katalog Alat" },
+  { href: "/admin/packages", label: "Paket Bundling" },
   { href: "/admin/accounts", label: "Akun Pengguna" },
-  { href: "/admin/reports", label: "Laporan" },
   { href: "/admin/pendapatan", label: "Rekap Penghasilan" },
+  { href: "/admin/reports", label: "Laporan Sistem" },
   { href: "/admin/history", label: "Histori Peminjaman" },
+  { href: "/", label: "Beranda Utama" },
 ];
 
 function MountainIcon({ className = "h-4 w-4" }) {
@@ -127,7 +127,6 @@ export default function NavBar() {
   }
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
-  const isAdminArea = pathname?.startsWith("/admin");
   const items = role === "admin" ? menuAdmin : role === "user" ? menuUser : menuGuest;
 
   return (
@@ -135,10 +134,7 @@ export default function NavBar() {
       {/* Header utama: kiri = logo + menu + role, kanan = Keluar / Masuk.
           Di area admin dibuat selebar layar supaya sejajar dengan sidebar. */}
       <header className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-xl">
-        <div
-          className={`flex h-16 items-center justify-between gap-4 ${isAdminArea ? "px-4 sm:px-6" : "mx-auto max-w-7xl px-6 sm:px-8"
-            }`}
-        >
+        <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           {/* Kiri */}
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Brand />
@@ -249,7 +245,7 @@ export default function NavBar() {
               const active =
                 item.href === "/"
                   ? pathname === "/"
-                  : item.href === "/user/dashboard" || item.href === "/admin/dashboard"
+                  : item.href === "/admin/dashboard"
                     ? pathname === item.href
                     : pathname === item.href || pathname?.startsWith(item.href + "/");
 
