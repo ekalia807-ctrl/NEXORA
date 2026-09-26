@@ -1,12 +1,64 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import RequireAuth from "@/components/shared/RequireAuth";
 
 import { createRentalAction } from "@/app/actions/rentals";
 import { addRental } from "@/lib/rentalsStore";
+
+function validateName(val) {
+  const clean = (val || "").trim();
+  if (!clean) {
+    return {
+      isValid: false,
+      message: "Lengkapi nama lengkap sesuai KTP dulu ya.",
+    };
+  }
+  if (clean.length < 3) {
+    return {
+      isValid: false,
+      message: "Nama lengkap minimal 3 karakter ya.",
+    };
+  }
+  return { isValid: true, clean };
+}
+
+function validatePhone(phone) {
+  const clean = (phone || "").trim().replace(/\D/g, "");
+  if (!clean) {
+    return {
+      isValid: false,
+      message: "Lengkapi nomor telepon dulu ya, biar admin bisa hubungi kamu.",
+    };
+  }
+  // Nomor telepon seluler Indonesia berawalan 08 atau 628 dengan panjang 10–14 digit angka
+  const isIndo = /^(?:628|08)[0-9]{8,12}$/.test(clean);
+  if (!isIndo) {
+    return {
+      isValid: false,
+      message: "Format nomor telepon belum valid. Gunakan awalan 08 atau 628 (10–14 digit angka) ya.",
+    };
+  }
+  return { isValid: true, clean };
+}
+
+function validateKtp(file) {
+  if (!file) {
+    return {
+      isValid: false,
+      message: "Silakan unggah foto KTP terlebih dahulu ya, untuk verifikasi peminjaman.",
+    };
+  }
+  if (file.type && !file.type.startsWith("image/")) {
+    return {
+      isValid: false,
+      message: "Format foto KTP harus berupa file gambar (JPG, PNG, atau WebP) ya.",
+    };
+  }
+  return { isValid: true };
+}
 
 function CheckoutForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -24,7 +76,9 @@ function CheckoutForm() {
     if (typeof window !== "undefined") {
       try {
         const u = JSON.parse(localStorage.getItem("user") || "{}");
-        return u.whatsapp || "";
+        const raw = u.whatsapp || u.phone || "";
+        // Sanitasi ke karakter numerik saja, tetap sebagai string agar angka 0 di depan terjaga
+        return String(raw).replace(/\D/g, "");
       } catch (e) {}
     }
     return "";
@@ -35,9 +89,98 @@ function CheckoutForm() {
   const [loading, setLoading] = useState(false);
   const [ktp, setKtp] = useState(null);
   const [ktpPreview, setKtpPreview] = useState("");
+  const [errors, setErrors] = useState({});
+
+  const nameInputRef = useRef(null);
+  const whatsappInputRef = useRef(null);
+  const ktpInputRef = useRef(null);
 
   const searchParams = useSearchParams();
   const alat = searchParams.get("alat") || "";
+
+  function handleNameChange(e) {
+    const val = e.target.value;
+    setName(val);
+    if (errors.name) {
+      const check = validateName(val);
+      if (check.isValid) {
+        setErrors((prev) => ({ ...prev, name: "" }));
+      }
+    }
+  }
+
+  function handleWhatsappKeyDown(e) {
+    // Izinkan tombol kontrol/navigasi & shortcut clipboard
+    if (
+      [
+        "Backspace",
+        "Delete",
+        "Tab",
+        "Escape",
+        "Enter",
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowDown",
+        "Home",
+        "End",
+      ].includes(e.key) ||
+      ((e.ctrlKey || e.metaKey) && ["a", "c", "v", "x", "z"].includes(e.key.toLowerCase()))
+    ) {
+      return;
+    }
+
+    // Cegah semua karakter selain angka 0-9
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  }
+
+  function handleWhatsappPaste(e) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text") || "";
+    // Hanya ambil karakter angka
+    const digitsOnly = pasted.replace(/\D/g, "");
+    if (digitsOnly) {
+      const input = e.target;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const currentVal = whatsapp;
+      const nextVal = (currentVal.slice(0, start) + digitsOnly + currentVal.slice(end)).slice(0, 15);
+      setWhatsapp(nextVal);
+      if (errors.whatsapp) {
+        const check = validatePhone(nextVal);
+        if (check.isValid) {
+          setErrors((prev) => ({ ...prev, whatsapp: "" }));
+        }
+      }
+    }
+  }
+
+  function handleWhatsappChange(e) {
+    const rawVal = e.target.value;
+    // Saring dan tolak karakter non-angka, simpan tetap sebagai string agar angka 0 depan tidak hilang
+    const digitsOnly = rawVal.replace(/\D/g, "").slice(0, 15);
+    setWhatsapp(digitsOnly);
+
+    if (errors.whatsapp) {
+      const check = validatePhone(digitsOnly);
+      if (check.isValid) {
+        setErrors((prev) => ({ ...prev, whatsapp: "" }));
+      }
+    }
+  }
+
+  function handleWhatsappBlur() {
+    if (whatsapp.trim()) {
+      const check = validatePhone(whatsapp);
+      if (!check.isValid) {
+        setErrors((prev) => ({ ...prev, whatsapp: check.message }));
+      } else {
+        setErrors((prev) => ({ ...prev, whatsapp: "" }));
+      }
+    }
+  }
 
   function handleKtpChange(e) {
     const file = e.target.files?.[0];
@@ -46,13 +189,66 @@ function CheckoutForm() {
       setKtpPreview("");
       return;
     }
+    const check = validateKtp(file);
+    if (!check.isValid) {
+      setKtp(null);
+      setKtpPreview("");
+      setErrors((prev) => ({ ...prev, ktp: check.message }));
+      return;
+    }
     setKtp(file);
     const preview = URL.createObjectURL(file);
     setKtpPreview(preview);
+    setErrors((prev) => ({ ...prev, ktp: "" }));
+  }
+
+  function handleRemoveKtp() {
+    setKtp(null);
+    setKtpPreview("");
+    if (ktpInputRef.current) {
+      ktpInputRef.current.value = "";
+    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    // 1. Validasi titik SUBMIT (Jaring pengaman utama)
+    const newErrors = {};
+
+    const nameCheck = validateName(name);
+    if (!nameCheck.isValid) {
+      newErrors.name = nameCheck.message;
+    }
+
+    const phoneCheck = validatePhone(whatsapp);
+    if (!phoneCheck.isValid) {
+      newErrors.whatsapp = phoneCheck.message;
+    }
+
+    const ktpCheck = validateKtp(ktp);
+    if (!ktpCheck.isValid) {
+      newErrors.ktp = ktpCheck.message;
+    }
+
+    setErrors(newErrors);
+
+    // 2. Jika ada field yang tidak valid / kosong: hentikan submit, stay di halaman, fokus ke field error pertama
+    if (Object.keys(newErrors).length > 0) {
+      if (newErrors.name && nameInputRef.current) {
+        nameInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        nameInputRef.current.focus();
+      } else if (newErrors.whatsapp && whatsappInputRef.current) {
+        whatsappInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        whatsappInputRef.current.focus();
+      } else if (newErrors.ktp && ktpInputRef.current) {
+        ktpInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        ktpInputRef.current.focus();
+      }
+      return;
+    }
+
+    // 3. Jika SEMUA field wajib sudah lengkap dan valid, baru lanjutkan proses submit
     setLoading(true);
 
     const diffDays = Math.max(
@@ -89,14 +285,18 @@ function CheckoutForm() {
       id: backendResult?.id ? String(backendResult.id) : undefined,
       backendId: backendResult?.id || null,
       item: alat || "Paket Tenda Dome 4P + Matras + Kompor",
-      name: name || "Peminjam",
-      whatsapp: whatsapp || "081234567890",
+      name: name.trim() || "Peminjam",
+      whatsapp: phoneCheck.clean || whatsapp.trim(),
       date: `${startDate} s/d ${endDate}`,
       start_date: startDate,
       end_date: endDate,
       total_days: diffDays,
       total_price: estimatedPrice,
       status: "Menunggu verifikasi",
+      ktp_number: "5201012304950001",
+      ktp_uploaded: true,
+      ktp_file_name: ktp?.name || "ktp.jpg",
+      ktp_preview: ktpPreview || "",
     });
 
     setSubmitted(true);
@@ -118,6 +318,26 @@ function CheckoutForm() {
         <p className="mx-auto mt-3 max-w-md text-sm text-ink/65 leading-relaxed">
           Pengajuan sewa peralatan pendakian kamu telah tercatat. Tim admin NEXORA akan segera meninjau permohonanmu. Setelah disetujui, kamu dapat langsung melanjutkan ke pembayaran.
         </p>
+
+        {/* Ringkasan Konfirmasi Data Peminjaman */}
+        <div className="mx-auto mt-6 max-w-sm rounded-xl border border-line bg-paper/60 p-4 text-left text-xs text-ink/80 space-y-2 shadow-sm">
+          <div className="flex justify-between border-b border-line/40 pb-1.5">
+            <span className="text-ink/50">Nama Peminjam:</span>
+            <span className="font-semibold text-ink">{name}</span>
+          </div>
+          <div className="flex justify-between border-b border-line/40 pb-1.5">
+            <span className="text-ink/50">Nomor WhatsApp:</span>
+            <span className="font-mono font-semibold text-ink">{whatsapp}</span>
+          </div>
+          <div className="flex justify-between border-b border-line/40 pb-1.5">
+            <span className="text-ink/50">Peralatan:</span>
+            <span className="font-medium text-ink">{alat || "Peralatan Pendakian"}</span>
+          </div>
+          <div className="flex justify-between pt-0.5">
+            <span className="text-ink/50">Periode Sewa:</span>
+            <span className="font-medium text-ink">{startDate} s/d {endDate}</span>
+          </div>
+        </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -164,7 +384,7 @@ function CheckoutForm() {
       </div>
 
       <div className="rounded-2xl border border-line bg-white/80 p-6 sm:p-8 shadow-sm backdrop-blur-sm max-w-2xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form noValidate onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
               Alat yang Dipilih
@@ -205,50 +425,119 @@ function CheckoutForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+            <label htmlFor="checkout-name" className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
               Nama Lengkap
             </label>
             <input
+              ref={nameInputRef}
+              id="checkout-name"
               type="text"
               required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleNameChange}
               placeholder="Masukkan nama lengkap sesuai KTP"
-              className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+              aria-invalid={errors.name ? "true" : "false"}
+              aria-describedby={errors.name ? "name-error" : undefined}
+              className={`mt-1.5 w-full rounded-xl border px-4 py-2.5 text-sm text-ink outline-none transition-all ${
+                errors.name
+                  ? "border-alert bg-alert/5 focus:border-alert focus:bg-white focus:ring-2 focus:ring-alert/20"
+                  : "border-line bg-paper/60 focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+              }`}
             />
+            {errors.name && (
+              <p id="name-error" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert">
+                <svg className="h-3.5 w-3.5 shrink-0 text-alert" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>{errors.name}</span>
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+            <label htmlFor="checkout-whatsapp" className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
               Nomor WhatsApp Aktif
             </label>
             <input
+              ref={whatsappInputRef}
+              id="checkout-whatsapp"
               type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="tel"
+              maxLength={15}
               required
               value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              placeholder="081234567890"
-              className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+              onChange={handleWhatsappChange}
+              onKeyDown={handleWhatsappKeyDown}
+              onPaste={handleWhatsappPaste}
+              onBlur={handleWhatsappBlur}
+              placeholder="Contoh: 081234567890"
+              aria-invalid={errors.whatsapp ? "true" : "false"}
+              aria-describedby={errors.whatsapp ? "whatsapp-error" : undefined}
+              className={`mt-1.5 w-full rounded-xl border px-4 py-2.5 font-mono text-sm text-ink outline-none transition-all ${
+                errors.whatsapp
+                  ? "border-alert bg-alert/5 focus:border-alert focus:bg-white focus:ring-2 focus:ring-alert/20"
+                  : "border-line bg-paper/60 focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
+              }`}
             />
+            {errors.whatsapp && (
+              <p id="whatsapp-error" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert">
+                <svg className="h-3.5 w-3.5 shrink-0 text-alert" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>{errors.whatsapp}</span>
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
+            <label htmlFor="checkout-ktp" className="block text-xs font-semibold text-ink/70 uppercase tracking-wide">
               Unggah Foto KTP / Identitas
             </label>
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleKtpChange}
-              className="mt-1.5 w-full cursor-pointer text-xs text-ink/70 file:mr-4 file:rounded-xl file:border-0 file:bg-ridge file:px-4 file:py-2 file:text-xs file:font-semibold file:text-fog hover:file:bg-ink"
-            />
+            <div
+              className={`mt-1.5 rounded-xl border p-2 transition-all ${
+                errors.ktp
+                  ? "border-alert bg-alert/5 ring-2 ring-alert/10"
+                  : "border-line bg-paper/60"
+              }`}
+            >
+              <input
+                ref={ktpInputRef}
+                id="checkout-ktp"
+                type="file"
+                accept="image/*"
+                onChange={handleKtpChange}
+                aria-invalid={errors.ktp ? "true" : "false"}
+                aria-describedby={errors.ktp ? "ktp-error" : undefined}
+                className="w-full cursor-pointer text-xs text-ink/70 file:mr-4 file:rounded-xl file:border-0 file:bg-ridge file:px-4 file:py-2 file:text-xs file:font-semibold file:text-fog hover:file:bg-ink focus:outline-none"
+              />
+            </div>
+
+            {errors.ktp && (
+              <p id="ktp-error" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-alert">
+                <svg className="h-3.5 w-3.5 shrink-0 text-alert" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>{errors.ktp}</span>
+              </p>
+            )}
 
             {ktpPreview && (
               <div className="mt-4">
-                <p className="mb-2 text-xs text-ink/50">
-                  Pratinjau KTP Terunggah:
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-ink/50">
+                    Pratinjau KTP Terunggah:
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleRemoveKtp}
+                    className="text-[11px] font-medium text-alert hover:underline"
+                  >
+                    Hapus / Ganti Foto
+                  </button>
+                </div>
                 <img
                   src={ktpPreview}
                   alt="Pratinjau KTP"
@@ -264,7 +553,7 @@ function CheckoutForm() {
               disabled={loading}
               className="w-full rounded-xl bg-ridge py-3 text-center text-xs font-bold text-fog shadow-sm hover:bg-ink transition-all disabled:opacity-50"
             >
-              {loading ? "Memproses Pengajuan..." : "Kirim Pengajuan Sewa →"}
+              {loading ? "Memproses Pengajuan..." : "Ajukan Sewa →"}
             </button>
           </div>
         </form>
