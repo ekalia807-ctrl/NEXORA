@@ -4,8 +4,8 @@ export const metadata = { title: "Katalog Alat — NEXORA" };
 
 export default function KatalogPublicPage() {
   return (
-    <main className="bg-paper px-6 py-16 sm:px-8">
-      <div className="mx-auto max-w-6xl">
+    <main className="bg-paper px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl">
         <h1 className="font-display text-4xl font-bold text-ink sm:text-5xl">
           Katalog Alat
         </h1>
