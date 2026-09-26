@@ -119,12 +119,10 @@ export async function toggleWishlist(gearItem) {
   );
 
   if (existingIndex >= 0) {
-    // Hapus dari wishlist
     const removedItem = current[existingIndex];
     const next = current.filter((_, idx) => idx !== existingIndex);
     writeLocalWishlist(next);
 
-    // Sinkronkan ke server di background
     try {
       if (removedItem.backendWishlistId) {
         await removeFromWishlistAction(removedItem.backendWishlistId);
@@ -137,7 +135,6 @@ export async function toggleWishlist(gearItem) {
 
     return { inWishlist: false };
   } else {
-    // Tambah ke wishlist
     const newItem = {
       id: gearId,
       gear_id: gearItem.backendId || (Number(gearId) ? Number(gearId) : gearId),
@@ -156,11 +153,9 @@ export async function toggleWishlist(gearItem) {
     const next = [newItem, ...current];
     writeLocalWishlist(next);
 
-    // Sinkronkan ke server di background
     try {
       const res = await addToWishlistAction(newItem.gear_id);
       if (res?.success && res.data?.id) {
-        // Simpan id backend agar delete berikutnya akurat
         const updated = readLocalWishlist().map((it) =>
           String(it.id) === gearId ? { ...it, backendWishlistId: res.data.id } : it
         );

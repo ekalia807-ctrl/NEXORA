@@ -10,7 +10,7 @@ import {
   addPackageItemAction,
   removePackageItemAction,
 } from "@/app/actions/packages";
-import { useCatalogSync } from "@/lib/catalogStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
 
 export default function AdminPackagesPage() {
   const gear = useCatalogSync();

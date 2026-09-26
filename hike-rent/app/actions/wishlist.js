@@ -5,7 +5,7 @@ import {
   createWishlist,
   deleteWishlist,
 } from "@/services/gateway/wishlist";
-import { getCurrentSession } from "@/lib/session";
+import { getCurrentSession } from "@/lib/server/session";
 
 /**
  * Mengambil daftar seluruh wishlist untuk pengguna aktif.

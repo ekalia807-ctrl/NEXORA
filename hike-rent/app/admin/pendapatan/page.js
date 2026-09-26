@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRentalsSync } from "@/lib/rentalsStore";
+import { useRentalsSync } from "@/lib/stores/rentalsStore";
 
 function formatMonth(yearMonth) {
   try {

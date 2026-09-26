@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRentalsSync } from "@/lib/rentalsStore";
-import { useCatalogSync } from "@/lib/catalogStore";
+import { useRentalsSync } from "@/lib/stores/rentalsStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
 
 export default function AdminReportsPage() {
   const rentals = useRentalsSync();

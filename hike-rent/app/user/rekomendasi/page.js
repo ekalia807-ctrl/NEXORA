@@ -2,11 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import RequireAuth from "@/components/shared/RequireAuth";
-import DashboardSidebar from "@/components/user/DashboardSidebar";
-import { useCatalog } from "@/lib/catalogStore";
-import { buatRekomendasi } from "@/lib/rekomendasi";
-import { formatRupiah, hitungBiaya } from "@/lib/hitungBiaya";
+import { useCatalog } from "@/lib/stores/catalogStore";
+import { buatRekomendasi } from "@/lib/domain/rekomendasi";
+import { formatRupiah, hitungBiaya } from "@/lib/utils/hitungBiaya";
 import { fetchPackagesAction, fetchPackageItemsAction } from "@/app/actions/packages";
 
 const PAKET_STORAGE_KEY = "nexora_paket_rekomendasi";
@@ -106,20 +104,51 @@ function RekomendasiContent() {
 
   return (
     <div className="space-y-6">
+      {/* Header Halaman Rekomendasi */}
+      <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
+                Panel Peminjam
+              </span>
+              <span className="h-1 w-1 rounded-full bg-ink/30" />
+              <span className="font-mono text-[11px] text-ink/50">Smart Recommendation</span>
+            </div>
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+              Rekomendasi Rombongan
+            </h1>
+            <p className="mt-1.5 text-sm text-ink/65 leading-relaxed max-w-2xl">
+              Pilih paket bundling promo pendakian siap pakai atau gunakan kalkulator cerdas NEXORA yang menyusun daftar peralatan berdasarkan jumlah personel dan karakteristik trip.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-ridge/10 border border-ridge/20 px-3.5 py-1 font-mono text-xs font-semibold text-ridge">
+              {activeTab === "bundling" ? `${officialPackages.length} Paket Promo` : "Mode Dinamis"}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Tab Switcher */}
-      <div className="flex border-b border-line bg-white/40">
+      <div className="flex flex-wrap gap-2 rounded-2xl border border-line bg-white/70 p-1.5 shadow-sm backdrop-blur-md">
         <button
           type="button"
           onClick={() => setActiveTab("bundling")}
-          className={`flex items-center gap-2 px-6 py-3.5 text-sm font-semibold transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "bundling"
-              ? "border-b-2 border-ridge text-ridge bg-paper/60"
-              : "text-ink/60 hover:text-ink"
+              ? "bg-ridge text-fog shadow-sm"
+              : "text-ink/70 hover:bg-paper hover:text-ink"
           }`}
         >
           <span>Paket Bundling Resmi</span>
           {officialPackages.length > 0 && (
-            <span className="rounded-full bg-ridge/10 px-2 py-0.5 text-[11px] font-mono text-ridge">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[11px] font-mono ${
+                activeTab === "bundling" ? "bg-white/20 text-fog" : "bg-ridge/10 text-ridge"
+              }`}
+            >
               {officialPackages.length}
             </span>
           )}
@@ -127,10 +156,10 @@ function RekomendasiContent() {
         <button
           type="button"
           onClick={() => setActiveTab("kustom")}
-          className={`flex items-center gap-2 px-6 py-3.5 text-sm font-semibold transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "kustom"
-              ? "border-b-2 border-ridge text-ridge bg-paper/60"
-              : "text-ink/60 hover:text-ink"
+              ? "bg-ridge text-fog shadow-sm"
+              : "text-ink/70 hover:bg-paper hover:text-ink"
           }`}
         >
           <span>Kalkulator Kustom Rombongan</span>
@@ -140,28 +169,28 @@ function RekomendasiContent() {
       {/* TAB 1: PAKET BUNDLING RESMI (LIVE DARI DATABASE BACKEND HMIF UNRAM) */}
       {activeTab === "bundling" && (
         <div className="space-y-6">
-          <div className="border border-line bg-white/40 p-6">
-            <h1 className="font-display text-2xl font-bold text-ink">
+          <div className="rounded-2xl border border-line bg-white/70 p-6 shadow-sm backdrop-blur-md">
+            <h2 className="font-display text-xl font-bold text-ink">
               Paket Bundling Promo Pendakian
-            </h1>
+            </h2>
             <p className="mt-1 text-sm text-ink/65">
-              Pilihan paket hemat komplit terverifikasi dari backend NEXORA. Lebih hemat dan tanpa repot memilih satu-per-satu.
+              Pilihan paket hemat komplit terverifikasi dari basis data NEXORA. Lebih hemat dan tanpa repot memilih satu-per-satu.
             </p>
           </div>
 
           {loadingPackages ? (
-            <div className="border border-line bg-white/40 p-8 text-center text-sm text-ink/50">
+            <div className="rounded-2xl border border-line bg-white/70 p-12 text-center text-sm text-ink/50 shadow-sm backdrop-blur-md">
               Menghubungkan ke API Backend HMIF UNRAM untuk memuat paket bundling...
             </div>
           ) : officialPackages.length === 0 ? (
-            <div className="border border-line bg-white/40 p-8 text-center text-sm text-ink/60">
+            <div className="rounded-2xl border border-line bg-white/70 p-12 text-center text-sm text-ink/60 shadow-sm backdrop-blur-md">
               Belum ada paket bundling aktif di database backend.
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
               {officialPackages.map((pkg) => {
                 const itemsInPkg = packageItems.filter((it) => it.package_id === pkg.id);
-                
+
                 // Hitung estimasi harga per hari jika alat ditemukan di katalog
                 const totalPerHari = itemsInPkg.reduce((sum, it) => {
                   const matched = gear.find(
@@ -175,11 +204,13 @@ function RekomendasiContent() {
                 return (
                   <div
                     key={pkg.id}
-                    className="flex flex-col justify-between border border-line bg-white/50 p-6 shadow-sm transition hover:border-ridge"
+                    className="flex flex-col justify-between rounded-2xl border border-line bg-white/70 p-6 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-ridge hover:shadow-md"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                        <span className="font-mono text-xs text-ink/40">PAKET #{pkg.id}</span>
+                        <span className="font-mono text-xs font-semibold text-ink/60 bg-paper px-2 py-0.5 rounded border border-line">
+                          PAKET #{pkg.id}
+                        </span>
                         {pkg.target && (
                           <span className="rounded-full bg-ridge/15 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-ridge">
                             {pkg.target}
@@ -187,7 +218,7 @@ function RekomendasiContent() {
                         )}
                       </div>
 
-                      <h3 className="mt-2 font-display text-xl font-bold text-ink">
+                      <h3 className="mt-3 font-display text-xl font-bold text-ink">
                         {pkg.name}
                       </h3>
                       <p className="mt-2 text-xs leading-relaxed text-ink/65">
@@ -195,8 +226,8 @@ function RekomendasiContent() {
                       </p>
 
                       {/* Komposisi Isi Paket */}
-                      <div className="mt-4 border-t border-line pt-3">
-                        <p className="font-mono text-[11px] uppercase tracking-wider text-ink/50">
+                      <div className="mt-4 border-t border-line/60 pt-3">
+                        <p className="font-mono text-[11px] uppercase tracking-wider text-ink/50 font-semibold">
                           Komposisi Alat ({itemsInPkg.length} item):
                         </p>
                         {itemsInPkg.length === 0 ? (
@@ -204,11 +235,11 @@ function RekomendasiContent() {
                             Komposisi alat sedang diperbarui oleh admin.
                           </p>
                         ) : (
-                          <ul className="mt-2 space-y-2">
+                          <ul className="mt-2.5 space-y-2">
                             {itemsInPkg.map((it) => (
                               <li
                                 key={it.id}
-                                className="flex items-center justify-between text-xs text-ink/80 bg-paper/70 px-2.5 py-1.5 rounded"
+                                className="flex items-center justify-between text-xs text-ink/80 bg-paper/60 px-3 py-2 rounded-xl border border-line/40"
                               >
                                 <span className="font-medium">
                                   {it.gear_name || `Alat #${it.gear_id}`}
@@ -223,11 +254,12 @@ function RekomendasiContent() {
                       </div>
                     </div>
 
-                    <div className="mt-6 border-t border-line pt-4">
-                      <div className="flex items-center justify-between mb-3">
+                    <div className="mt-6 border-t border-line/60 pt-4">
+                      <div className="flex items-center justify-between mb-3.5">
                         <span className="text-xs text-ink/60">Estimasi Paket:</span>
-                        <span className="font-display text-base font-bold text-ink">
-                          {formatRupiah(totalPerHari)} <span className="text-xs font-normal text-ink/50">/hari</span>
+                        <span className="font-display text-lg font-bold text-ink">
+                          {formatRupiah(totalPerHari)}{" "}
+                          <span className="text-xs font-normal text-ink/50">/hari</span>
                         </span>
                       </div>
 
@@ -235,7 +267,7 @@ function RekomendasiContent() {
                         type="button"
                         onClick={() => handleSewaOfficialPackage(pkg.id)}
                         disabled={itemsInPkg.length === 0}
-                        className="w-full rounded-sm bg-ridge py-2.5 text-xs font-semibold text-fog hover:bg-ink transition-colors disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
+                        className="w-full rounded-xl bg-ridge py-3 text-xs font-semibold text-fog hover:bg-ink transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
                       >
                         Sewa Paket Ini (Kalkulasi) →
                       </button>
@@ -251,50 +283,51 @@ function RekomendasiContent() {
       {/* TAB 2: REKOMENDASI KUSTOM (ENGINE ATURAN ROMBONGAN) */}
       {activeTab === "kustom" && (
         <div className="space-y-6">
-          <div className="border border-line bg-white/40 p-6">
-            <h1 className="font-display text-2xl font-bold text-ink">
-              Rekomendasi Perlengkapan Rombongan
-            </h1>
-            <p className="mt-2 text-sm text-ink/65">
-              Masukkan jumlah personel dan karakteristik trip, algoritma NEXORA akan menyusun daftar
-              alat yang sebaiknya dibawa secara dinamis.
+          <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
+            <h2 className="font-display text-xl font-bold text-ink">
+              Atur Rombongan & Karakteristik Trip
+            </h2>
+            <p className="mt-1 text-sm text-ink/65">
+              Masukkan jumlah personel dan karakteristik trip, algoritma cerdas NEXORA akan menyusun rekomendasi alat secara otomatis.
             </p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-ink/70">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
                 Jumlah personel
                 <input
                   type="number"
                   min={1}
                   value={personel}
                   onChange={(e) => setPersonel(e.target.value)}
-                  className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-ink outline-none focus:border-ridge"
+                  className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white"
                 />
               </label>
-              <label className="block text-sm text-ink/70">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
                 Durasi trip (hari)
                 <input
                   type="number"
                   min={1}
                   value={durasiHari}
                   onChange={(e) => setDurasiHari(e.target.value)}
-                  className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-ink outline-none focus:border-ridge"
+                  className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all focus:border-ridge focus:bg-white"
                 />
               </label>
             </div>
 
             <div className="mt-5">
-              <p className="text-sm text-ink/70">Karakteristik medan</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink/70">
+                Karakteristik medan & rute
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {KONDISI_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => toggleKondisi(opt.value)}
-                    className={`rounded-full border px-4 py-1.5 text-xs transition-colors ${
+                    className={`rounded-xl border px-4 py-2 text-xs font-medium transition-all ${
                       kondisi.includes(opt.value)
-                        ? "border-ridge bg-ridge text-fog"
-                        : "border-line text-ink/70 hover:border-ink/40"
+                        ? "border-ridge bg-ridge text-fog shadow-sm"
+                        : "border-line bg-paper/40 text-ink/70 hover:border-ink/40 hover:bg-paper"
                     }`}
                   >
                     {opt.label}
@@ -304,47 +337,61 @@ function RekomendasiContent() {
             </div>
           </div>
 
-          <div className="border border-line bg-white/40 p-6">
-            <h2 className="font-display text-xl font-semibold text-ink">Paket yang disarankan</h2>
-            <ul className="mt-4 space-y-3">
+          <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
+            <div className="flex items-center justify-between border-b border-line/60 pb-3">
+              <h2 className="font-display text-lg font-bold text-ink">
+                Paket Rekomendasi Cerdas
+              </h2>
+              <span className="font-mono text-xs text-ink/50">
+                {tersedia.length} Item Direkomendasikan
+              </span>
+            </div>
+
+            <ul className="mt-4 divide-y divide-line/60">
               {tersedia.map((r) => (
                 <li
                   key={r.alat.id}
-                  className="flex items-center justify-between border-b border-line pb-3 last:border-none last:pb-0"
+                  className="flex flex-wrap items-center justify-between gap-3 py-3.5"
                 >
                   <div>
-                    <p className="text-sm text-ink/90">
-                      {r.alat.name} × {r.jumlah}
+                    <p className="text-sm font-semibold text-ink">
+                      {r.alat.name}{" "}
+                      <span className="font-mono text-ridge">× {r.jumlah}</span>
                       {r.alat.stock === "merah" && (
-                        <span className="ml-2 rounded-full bg-alert px-2 py-0.5 text-[10px] text-fog">
+                        <span className="ml-2 rounded-full bg-alert px-2 py-0.5 text-[10px] font-semibold text-fog">
                           Stok habis
                         </span>
                       )}
                     </p>
-                    <p className="text-xs text-ink/45">{r.alasan}</p>
+                    <p className="mt-0.5 text-xs text-ink/50">{r.alasan}</p>
                   </div>
-                  <span className="text-sm text-ink/70">
-                    {formatRupiah(hitungBiaya({ hargaPerHari: r.alat.price, jumlah: r.jumlah, durasiHari }))}
+                  <span className="font-mono text-sm font-semibold text-ink">
+                    {formatRupiah(
+                      hitungBiaya({
+                        hargaPerHari: r.alat.price,
+                        jumlah: r.jumlah,
+                        durasiHari,
+                      })
+                    )}
                   </span>
                 </li>
               ))}
             </ul>
 
             {tidakDitemukan.length > 0 && (
-              <p className="mt-4 text-xs text-ink/40">
-                Sebagian alat rujukan tidak ditemukan di katalog (mungkin sudah diubah/dihapus admin).
+              <p className="mt-4 rounded-xl border border-line/60 bg-paper/50 p-3 text-xs text-ink/50">
+                Sebagian alat rujukan tidak ditemukan di katalog (mungkin sudah diubah atau dihapus oleh admin).
               </p>
             )}
             {stokHabis.length > 0 && (
-              <p className="mt-2 text-xs text-alert">
-                {stokHabis.length} alat di paket ini sedang habis stok — koordinasikan ulang
-                jadwal sebelum mengajukan sewa.
+              <p className="mt-3 rounded-xl border border-alert/30 bg-alert/10 p-3 text-xs text-alert font-medium">
+                {stokHabis.length} alat di paket ini sedang habis stok — koordinasikan ulang jadwal atau hubungi admin sebelum mengajukan sewa.
               </p>
             )}
 
-            <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
-              <span className="font-display text-lg font-semibold text-ink">
-                Estimasi total ({durasiHari} hari)
+            <div className="mt-6 flex items-center justify-between border-t border-line/60 pt-4">
+              <span className="font-display text-base font-semibold text-ink">
+                Estimasi Total ({durasiHari} hari):
               </span>
               <span className="font-display text-2xl font-bold text-ink">
                 {formatRupiah(totalEstimasi)}
@@ -354,7 +401,7 @@ function RekomendasiContent() {
             <button
               onClick={handleSewaPaketKustom}
               disabled={tersedia.length === 0}
-              className="mt-6 w-full rounded-sm bg-ridge px-5 py-3 text-sm font-medium text-fog transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-6 w-full rounded-xl bg-ridge px-5 py-3.5 text-sm font-semibold text-fog transition-all duration-200 hover:bg-ink disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
             >
               Sewa Paket Ini (Kalkulator) →
             </button>
@@ -366,14 +413,5 @@ function RekomendasiContent() {
 }
 
 export default function RekomendasiPage() {
-  return (
-    <RequireAuth allow={["user"]}>
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10 sm:px-8 lg:flex-row">
-        <DashboardSidebar />
-        <main className="min-w-0 flex-1">
-          <RekomendasiContent />
-        </main>
-      </div>
-    </RequireAuth>
-  );
+  return <RekomendasiContent />;
 }

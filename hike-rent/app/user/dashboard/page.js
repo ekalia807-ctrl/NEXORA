@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRentalsSync, statusStyle } from "@/lib/rentalsStore";
-import { useWishlist } from "@/lib/wishlistStore";
-import { formatRupiah } from "@/lib/hitungBiaya";
+import { useRentalsSync } from "@/lib/stores/rentalsStore";
+import { statusStyle } from "@/constants/rentalStatus";
+import { useWishlist } from "@/lib/stores/wishlistStore";
+import { formatRupiah } from "@/lib/utils/hitungBiaya";
 
 export default function DashboardOverviewPage() {
   const rentals = useRentalsSync();

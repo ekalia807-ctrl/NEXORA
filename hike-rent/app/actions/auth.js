@@ -1,7 +1,7 @@
 "use server";
 
 import { authLogin, authRegister, authLogout, authMe, authKey } from "@/services/gateway/auth";
-import { saveSession, getCurrentSession, destroySession } from "@/lib/session";
+import { saveSession, getCurrentSession, destroySession } from "@/lib/server/session";
 
 // Daftar email resmi yang memiliki hak akses Admin
 const ADMIN_WHITELIST = [

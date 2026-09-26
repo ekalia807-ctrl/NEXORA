@@ -2,15 +2,13 @@
 import Link from "next/link";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import RequireAuth from "@/components/shared/RequireAuth";
-import DashboardSidebar from "@/components/user/DashboardSidebar";
-import { useCatalogSync } from "@/lib/catalogStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
 import {
   formatRupiah,
   hitungDurasiHari,
   hitungBiaya,
   validasiTanggal,
-} from "@/lib/hitungBiaya";
+} from "@/lib/utils/hitungBiaya";
 
 const PAKET_STORAGE_KEY = "nexora_paket_rekomendasi";
 

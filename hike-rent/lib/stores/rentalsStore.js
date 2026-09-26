@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import { RENTAL_STATUS, statusStyle } from "@/constants/rentalStatus";
+import { fetchRentalsAction } from "@/app/actions/rentals";
 
 const STORAGE_KEY = "nexora_rentals_v2";
 const EVENT_NAME = "rentals-changed";
@@ -22,11 +24,19 @@ export function normalizeRental(r) {
 
   // Normalisasi status
   let normStatus = r.status || "Menunggu verifikasi";
-  if (normStatus === "diajukan") normStatus = "Menunggu verifikasi";
-  if (normStatus === "diverifikasi" || normStatus === "Aktif") normStatus = "Disetujui";
+  if (normStatus === "diajukan" || normStatus === "menunggu_verifikasi" || normStatus === RENTAL_STATUS.PENDING) {
+    normStatus = "Menunggu verifikasi";
+  }
+  if (normStatus === "diverifikasi" || normStatus === "aktif" || normStatus === "Aktif" || normStatus === RENTAL_STATUS.ACTIVE) {
+    normStatus = "Disetujui";
+  }
   if (normStatus === "diambil") normStatus = "Diambil";
-  if (normStatus === "selesai" || normStatus === "dikembalikan") normStatus = "Selesai";
-  if (normStatus === "ditolak" || normStatus === "dibatalkan") normStatus = "Ditolak";
+  if (normStatus === "selesai" || normStatus === "dikembalikan" || normStatus === RENTAL_STATUS.COMPLETED) {
+    normStatus = "Selesai";
+  }
+  if (normStatus === "ditolak" || normStatus === "dibatalkan" || normStatus === RENTAL_STATUS.REJECTED) {
+    normStatus = "Ditolak";
+  }
 
   // Hitung step saat ini untuk progress tracker 4 tahap
   let currentStep = 0;
@@ -49,28 +59,37 @@ export function normalizeRental(r) {
     }
   }
 
+  const durationNights = Number(r.duration_nights ?? r.total_days ?? r.nights ?? 1);
+  const totalAmount = Number(r.total_amount ?? r.total_price ?? r.total ?? 0);
+  const notesText = r.notes || r.note || "";
+
   return {
-    id: formattedId,
+    id: r.order_code || formattedId,
+    order_code: r.order_code || formattedId,
     backendId: typeof r.id === "number" ? r.id : Number(r.id) || null,
     user_id: r.user_id || null,
     user: r.user || r.name || r.user_name || "Peminjam",
-    name: r.name || r.user || "Peminjam",
+    name: r.name || r.user || r.user_name || "Peminjam",
     email: r.email || r.user_email || "",
     whatsapp: r.whatsapp || r.phone || "081234567890",
-    item: r.item || r.gear_name || "Peralatan Pendakian",
+    item: r.item || r.gear_name || (notesText.startsWith("Pengajuan sewa alat: ") ? notesText.replace("Pengajuan sewa alat: ", "") : "Peralatan Pendakian"),
     category: r.category || "Tenda",
     date: dateDisplay,
     start_date: r.start_date || "",
     end_date: r.end_date || "",
-    total_days: Number(r.total_days ?? r.nights ?? 1),
-    nights: Number(r.nights ?? r.total_days ?? 1),
-    total: Number(r.total_price ?? r.total ?? 0),
-    total_price: Number(r.total_price ?? r.total ?? 0),
+    total_days: durationNights,
+    duration_nights: durationNights,
+    nights: durationNights,
+    total: totalAmount,
+    total_price: totalAmount,
+    total_amount: totalAmount,
     status: normStatus,
     steps: ["Diajukan", "Disetujui", "Diambil", "Dikembalikan"],
     currentStep: currentStep,
-    note: r.note || "",
+    note: notesText,
+    notes: notesText,
     ktp_number: r.ktp_number || "",
+    ktp_snapshot_url: r.ktp_snapshot_url || "",
     payment_status: paymentStatus,
     payment_method: r.payment_method || r.paymentMethod || "",
     payment_proof: paymentProof,
@@ -117,17 +136,17 @@ export function addRental(rental) {
 export function updateRentalStatus(id, newStatus, extraPatch = {}, auditEntry = null) {
   const current = readAll();
   const next = current.map((r) => {
-    if (r.id === id || String(r.backendId) === String(id)) {
+    if (r.id === id || String(r.backendId) === String(id) || r.order_code === id) {
       let currentStep = 0;
-      if (newStatus === "Menunggu verifikasi" || newStatus === "diajukan") currentStep = 0;
-      else if (newStatus === "Disetujui" || newStatus === "diverifikasi" || newStatus === "Aktif") currentStep = 1;
+      if (newStatus === "Menunggu verifikasi" || newStatus === "diajukan" || newStatus === RENTAL_STATUS.PENDING) currentStep = 0;
+      else if (newStatus === "Disetujui" || newStatus === "diverifikasi" || newStatus === "Aktif" || newStatus === RENTAL_STATUS.ACTIVE) currentStep = 1;
       else if (newStatus === "Diambil" || newStatus === "diambil") currentStep = 2;
-      else if (newStatus === "Selesai" || newStatus === "selesai" || newStatus === "dikembalikan") currentStep = 3;
-      else if (newStatus === "Ditolak" || newStatus === "ditolak") currentStep = 0;
+      else if (newStatus === "Selesai" || newStatus === "selesai" || newStatus === "dikembalikan" || newStatus === RENTAL_STATUS.COMPLETED) currentStep = 3;
+      else if (newStatus === "Ditolak" || newStatus === "ditolak" || newStatus === RENTAL_STATUS.REJECTED) currentStep = 0;
 
       let displayStatus = newStatus;
-      if (newStatus === "diverifikasi" || newStatus === "Aktif") displayStatus = "Disetujui";
-      if (newStatus === "diajukan") displayStatus = "Menunggu verifikasi";
+      if (newStatus === "diverifikasi" || newStatus === "Aktif" || newStatus === "aktif") displayStatus = "Disetujui";
+      if (newStatus === "diajukan" || newStatus === "menunggu_verifikasi") displayStatus = "Menunggu verifikasi";
       if (newStatus === "selesai" || newStatus === "dikembalikan") displayStatus = "Selesai";
 
       const existingLogs = Array.isArray(r.status_logs) ? r.status_logs : [];
@@ -165,6 +184,29 @@ export async function syncRentalsFromBackend() {
 
   isSyncing = true;
   try {
+    // 1. Coba via Server Action langsung
+    const actRes = await fetchRentalsAction();
+    if (actRes?.success && Array.isArray(actRes.data)) {
+      const normalizedBackend = actRes.data.map(normalizeRental).filter(Boolean);
+
+      const localItems = readAll();
+      const backendIds = new Set(normalizedBackend.map((b) => String(b.id)));
+      const backendBackendIds = new Set(
+        normalizedBackend.map((b) => String(b.backendId)).filter(Boolean)
+      );
+
+      const localOnly = localItems.filter(
+        (l) =>
+          !backendIds.has(String(l.id)) &&
+          (!l.backendId || !backendBackendIds.has(String(l.backendId)))
+      );
+
+      const merged = [...normalizedBackend, ...localOnly];
+      writeAll(merged);
+      return merged;
+    }
+
+    // 2. Fallback via route handler /api/rentals
     const res = await fetch("/api/rentals", { cache: "no-store" });
     if (res.ok) {
       const backendData = await res.json();
@@ -231,12 +273,4 @@ export function useRentalsSync() {
   return rentals;
 }
 
-export const statusStyle = {
-  Disetujui: "bg-moss text-fog",
-  Aktif: "bg-moss text-fog",
-  "Menunggu verifikasi": "bg-amber text-ink",
-  Diambil: "bg-ridge text-amber",
-  Selesai: "bg-line text-ink/70",
-  Ditolak: "bg-alert text-fog",
-  Dibatalkan: "bg-alert text-fog",
-};
+export { statusStyle };

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useRole } from "@/lib/useRole";
+import { useRole } from "@/lib/hooks/useRole";
 import RequireAuth from "@/components/shared/RequireAuth";
 import DashboardSidebar from "@/components/user/DashboardSidebar";
 

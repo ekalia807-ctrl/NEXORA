@@ -4,7 +4,7 @@ import {
   getRentalStatusLogs,
   createRentalStatusLog,
 } from "@/services/gateway/rentalStatusLogs";
-import { getCurrentSession } from "@/lib/session";
+import { getCurrentSession } from "@/lib/server/session";
 
 /**
  * Mengambil seluruh catatan riwayat perubahan status sewa (Audit Trail).

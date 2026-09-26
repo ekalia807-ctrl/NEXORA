@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRentalsSync } from "@/lib/rentalsStore";
+import { useRentalsSync } from "@/lib/stores/rentalsStore";
 
 export default function AdminAccountsPage() {
   const rentals = useRentalsSync();

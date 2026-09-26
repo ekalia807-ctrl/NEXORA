@@ -1,7 +1,3 @@
-export const categories = ["Semua", "Tenda", "Carrier", "Tidur", "Masak", "Navigasi"];
-
-export const gear = [];
-
 /**
  * Normalisasi URL gambar alat pendakian:
  * - "-" atau string kosong / null diubah menjadi ""
@@ -18,16 +14,3 @@ export function normalizeGearImage(rawUrl) {
   const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return `https://hmif.if.unram.ac.id${path}`;
 }
-
-export const stockLabel = {
-  hijau: "Tersedia",
-  kuning: "Terbatas",
-  merah: "Habis",
-};
-
-export const stockColor = {
-  hijau: "bg-moss",
-  kuning: "bg-amber",
-  merah: "bg-alert",
-};
-

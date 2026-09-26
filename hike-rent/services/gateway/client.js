@@ -28,6 +28,10 @@ export async function apiFetch(endpoint, options = {}) {
     }
   }
 
+  if (!bearerToken && process.env.NEXT_PUBLIC_DEV_TOKEN) {
+    bearerToken = process.env.NEXT_PUBLIC_DEV_TOKEN;
+  }
+
   const headers = {
     "Content-Type": "application/json",
     Accept: "application/json",

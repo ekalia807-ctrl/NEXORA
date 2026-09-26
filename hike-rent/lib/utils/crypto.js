@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
 /**
- * lib/crypto.js
+ * lib/utils/crypto.js
  * Enkripsi / Hashing Password Ringkas & Sederhana (SHA-256)
  */
 

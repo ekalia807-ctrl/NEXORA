@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useRole } from "@/lib/useRole";
+import { useRole } from "@/lib/hooks/useRole";
 import { logoutAction } from "@/app/actions/auth";
 
 // Menu lengkap khusus peminjam mencakup seluruh rute /user/*

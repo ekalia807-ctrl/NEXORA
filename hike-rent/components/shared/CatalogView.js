@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCatalogSync, stockLabel, stockColor } from "@/lib/catalogStore";
-import { formatRupiah } from "@/lib/hitungBiaya";
-import { useRole } from "@/lib/useRole";
-import { useWishlist, toggleWishlist, isItemInWishlist } from "@/lib/wishlistStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
+import { stockLabel, stockColor } from "@/constants/gearStock";
+import { formatRupiah } from "@/lib/utils/hitungBiaya";
+import { useRole } from "@/lib/hooks/useRole";
+import { useWishlist, toggleWishlist, isItemInWishlist } from "@/lib/stores/wishlistStore";
 
 const SORT_OPTIONS = [
   { value: "terlaris", label: "Paling sering dipinjam (Terlaris)" },

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRentalsSync, updateRentalStatus, statusStyle } from "@/lib/rentalsStore";
+import { useRentalsSync, updateRentalStatus } from "@/lib/stores/rentalsStore";
+import { statusStyle } from "@/constants/rentalStatus";
 import { updateRentalAction } from "@/app/actions/rentals";
 import { createRentalStatusLogAction } from "@/app/actions/rentalStatusLogs";
-import { formatRupiah } from "@/lib/hitungBiaya";
+import { formatRupiah } from "@/lib/utils/hitungBiaya";
 
 export default function AdminApprovalPage() {
   const allRentals = useRentalsSync();
@@ -92,10 +93,9 @@ export default function AdminApprovalPage() {
       statusNotes[req.id] ||
       `Admin mengubah status dari "${current}" menjadi "${targetStatus}".`;
 
-    // Map ke nilai backend
-    let backendStatus = "diajukan";
-    if (targetStatus === "Disetujui") backendStatus = "diverifikasi";
-    else if (targetStatus === "Diambil") backendStatus = "diambil";
+    // Map ke nilai enum skema database backend: menunggu_verifikasi | aktif | selesai | ditolak
+    let backendStatus = "menunggu_verifikasi";
+    if (targetStatus === "Disetujui" || targetStatus === "Diambil") backendStatus = "aktif";
     else if (targetStatus === "Selesai") backendStatus = "selesai";
     else if (targetStatus === "Ditolak" || targetStatus === "Dibatalkan") backendStatus = "ditolak";
 

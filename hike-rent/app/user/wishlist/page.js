@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useWishlist, removeWishlistItem } from "@/lib/wishlistStore";
-import { formatRupiah } from "@/lib/hitungBiaya";
-import { stockLabel, stockColor } from "@/lib/catalogStore";
+import { useWishlist, removeWishlistItem } from "@/lib/stores/wishlistStore";
+import { formatRupiah } from "@/lib/utils/hitungBiaya";
+import { stockLabel, stockColor } from "@/constants/gearStock";
 
 export default function UserWishlistPage() {
   const wishlist = useWishlist();

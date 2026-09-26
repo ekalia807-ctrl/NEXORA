@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRentalsSync, statusStyle } from "@/lib/rentalsStore";
+import { useRentalsSync } from "@/lib/stores/rentalsStore";
+import { statusStyle } from "@/constants/rentalStatus";
 
 const statusFilters = ["Semua", "Aktif", "Menunggu verifikasi", "Selesai", "Ditolak"];
 

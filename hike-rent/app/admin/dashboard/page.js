@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCatalogSync } from "@/lib/catalogStore";
-import { useRentalsSync } from "@/lib/rentalsStore";
+import { useCatalogSync } from "@/lib/stores/catalogStore";
+import { useRentalsSync } from "@/lib/stores/rentalsStore";
 
 /* ---------- Tampilan saja (ikon & warna), bukan logika data ---------- */
 const iconProps = {

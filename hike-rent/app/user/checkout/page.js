@@ -6,7 +6,7 @@ import Link from "next/link";
 import RequireAuth from "@/components/shared/RequireAuth";
 
 import { createRentalAction } from "@/app/actions/rentals";
-import { addRental } from "@/lib/rentalsStore";
+import { addRental } from "@/lib/stores/rentalsStore";
 
 function CheckoutForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -64,14 +64,19 @@ function CheckoutForm() {
     );
     const estimatedPrice = diffDays * 50000;
 
+    const orderCode = `ORD-${Date.now().toString().slice(-6)}`;
     const payload = {
+      order_code: orderCode,
       start_date: startDate,
       end_date: endDate,
+      duration_nights: diffDays,
       total_days: diffDays,
+      total_amount: estimatedPrice,
       total_price: estimatedPrice,
-      status: "diajukan",
+      status: "menunggu_verifikasi",
+      notes: `Pengajuan sewa alat: ${alat || "Peralatan Pendakian"}`,
       note: `Pengajuan sewa alat: ${alat || "Peralatan Pendakian"}`,
-      ktp_number: "5201012304950001",
+      ktp_snapshot_url: "",
     };
 
     let backendResult = null;
@@ -86,7 +91,8 @@ function CheckoutForm() {
 
     // Rekam ke rental store client-side
     addRental({
-      id: backendResult?.id ? String(backendResult.id) : undefined,
+      id: backendResult?.order_code || orderCode,
+      order_code: backendResult?.order_code || orderCode,
       backendId: backendResult?.id || null,
       item: alat || "Paket Tenda Dome 4P + Matras + Kompor",
       name: name || "Peminjam",
@@ -95,8 +101,11 @@ function CheckoutForm() {
       start_date: startDate,
       end_date: endDate,
       total_days: diffDays,
+      duration_nights: diffDays,
       total_price: estimatedPrice,
+      total_amount: estimatedPrice,
       status: "Menunggu verifikasi",
+      note: `Pengajuan sewa alat: ${alat || "Peralatan Pendakian"}`,
     });
 
     setSubmitted(true);

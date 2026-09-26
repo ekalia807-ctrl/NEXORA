@@ -5,18 +5,18 @@
 //   - app/user/katalog (tampilan alat untuk peminjam)
 //   - app/user/kalkulator, rekomendasi, dsb.
 //
-// Terintegrasi dengan Backend HMIF UNRAM API Gateway v2 (/gear & /categories)
+// Terintegrasi dengan Backend HMIF UNRAM API Gateway v2/v3 (/gear & /categories)
 // dengan arsitektur Dual-Sync (Live API + LocalStorage Cache Fallback)
 // menggunakan useSyncExternalStore + custom event 'catalog-changed'.
 
 import { useEffect, useSyncExternalStore } from "react";
 import {
-  gear as seedGear,
-  categories as defaultCategories,
   stockLabel,
   stockColor,
-  normalizeGearImage,
-} from "./gear";
+  categories as defaultCategories,
+} from "@/constants/gearStock";
+import { normalizeGearImage } from "@/lib/utils/gearImage";
+import { fetchGearAction } from "@/app/actions/gear";
 
 const STORAGE_KEY = "nexora_catalog_v2";
 const EVENT_NAME = "catalog-changed";
@@ -63,7 +63,6 @@ export function normalizeBackendGear(g) {
     availableStock: Number(g.available_stock ?? g.total_stock ?? 5),
     provider: g.provider || "Basecamp NEXORA",
     note: g.note || g.description || "",
-    // TODO: Ganti dengan hitungan asli dari riwayat peminjaman (rentals/rental_items) begitu backend API analitik tersedia.
     timesBorrowed: Number(
       g.times_borrowed ??
       g.timesBorrowed ??
@@ -86,7 +85,6 @@ function readAll() {
       const normalizedImg = normalizeGearImage(rawImg);
       return {
         ...item,
-        // TODO: Ganti dengan hitungan asli dari riwayat peminjaman (rentals/rental_items) begitu backend API analitik tersedia.
         timesBorrowed: Number(
           item.timesBorrowed ??
           (Math.abs(String(item.name || item.id || "gear").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 40 + 12)
@@ -118,7 +116,6 @@ export function addCatalogItem(item) {
   const items = readAll();
   let id = item.id ? String(item.id) : slugify(item.name || "alat-baru");
 
-  // Pastikan id unik jika belum unik
   let suffix = 1;
   const existingIds = new Set(items.map((it) => String(it.id)));
   let uniqueId = id;
@@ -192,9 +189,6 @@ export async function resetCatalogToDefault() {
   return await syncCatalogFromBackend();
 }
 
-// -------------------------------------------------------------
-// SINKRONISASI ASINKRON KE BACKEND HMIF UNRAM
-// -------------------------------------------------------------
 let isSyncing = false;
 
 export async function syncCatalogFromBackend() {
@@ -203,21 +197,23 @@ export async function syncCatalogFromBackend() {
 
   isSyncing = true;
   try {
-    // Ambil data gear live dari route handler lokal /api/gear
-    const res = await fetch("/api/gear", { cache: "no-store" });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} saat sinkronisasi katalog.`);
-    }
-
-    const backendData = await res.json();
-    if (Array.isArray(backendData)) {
-      const normalizedBackend = backendData
-        .map(normalizeBackendGear)
-        .filter(Boolean);
-
-      // Gunakan data murni dari database backend
+    // 1. Coba via Server Action langsung
+    const actRes = await fetchGearAction();
+    if (actRes?.success && Array.isArray(actRes.data) && actRes.data.length > 0) {
+      const normalizedBackend = actRes.data.map(normalizeBackendGear).filter(Boolean);
       writeAll(normalizedBackend);
       return normalizedBackend;
+    }
+
+    // 2. Fallback via route handler /api/gear
+    const res = await fetch("/api/gear", { cache: "no-store" });
+    if (res.ok) {
+      const backendData = await res.json();
+      if (Array.isArray(backendData)) {
+        const normalizedBackend = backendData.map(normalizeBackendGear).filter(Boolean);
+        writeAll(normalizedBackend);
+        return normalizedBackend;
+      }
     }
   } catch (err) {
     console.warn("Sinkronisasi katalog backend fallback ke cache lokal:", err.message);
@@ -245,13 +241,11 @@ function getServerSnapshot() {
   return JSON.stringify([]);
 }
 
-// Hook reaktif: komponen otomatis re-render setiap kali katalog berubah
 export function useCatalog() {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   return JSON.parse(snapshot);
 }
 
-// Hook reaktif + auto-sync backend pada mount
 export function useCatalogSync() {
   const gear = useCatalog();
 

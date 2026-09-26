@@ -3,14 +3,16 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   useCatalogSync,
-  categories as defaultCategories,
-  stockLabel,
   addCatalogItem,
   updateCatalogItem,
   deleteCatalogItem,
   syncCatalogFromBackend,
   slugify,
-} from "@/lib/catalogStore";
+} from "@/lib/stores/catalogStore";
+import {
+  categories as defaultCategories,
+  stockLabel,
+} from "@/constants/gearStock";
 import {
   createGearAction,
   updateGearAction,
