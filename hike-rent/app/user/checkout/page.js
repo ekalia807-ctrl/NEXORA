@@ -134,6 +134,7 @@ function CheckoutForm() {
 
   const searchParams = useSearchParams();
   const alat = searchParams.get("alat") || "";
+  const alatId = searchParams.get("alatId") || "";
   const isPaket = searchParams.get("paket") === "1";
 
   // ==========================================
@@ -157,22 +158,66 @@ function CheckoutForm() {
     }
   });
 
-  // Cocokkan alatId dari localStorage ke data katalog (nama alat, harga, dsb).
+  // ==========================================
+  // SATUKAN SEMUA SUMBER "ALAT YANG MAU DISEWA" JADI SATU BENTUK:
+  // { id, name, jumlah, pricePerHari }[]
+  //
+  // Urutan prioritas sumber data:
+  //  1. Paket rombongan (?paket=1 + localStorage)
+  //  2. Satu alat dari Katalog (?alatId=...) → dicocokkan ke katalog untuk dapat harga
+  //  3. Peninggalan lama (?alat=NamaAlat, tanpa id) → dicocokkan by nama kalau bisa
+  //  4. Tidak ada sama sekali → array kosong (checkout tidak boleh nebak-nebak alat)
+  // ==========================================
   const paketItems = useMemo(() => {
-    if (!isPaket || rawPaket.length === 0) return [];
+    // 1. Paket rombongan.
+    if (isPaket && rawPaket.length > 0) {
+      return rawPaket.map((row) => {
+        const matched = gear.find((g) => g.id === String(row.alatId));
 
-    return rawPaket.map((row) => {
-      const matched = gear.find((g) => g.id === String(row.alatId));
+        return {
+          id: row.alatId,
+          name: matched ? matched.name : `Alat #${row.alatId}`,
+          jumlah: row.jumlah || 1,
+          // Fallback harga kalau alat tidak ketemu di katalog (mis. sudah dihapus admin).
+          pricePerHari: matched ? matched.price : 40000,
+        };
+      });
+    }
 
-      return {
-        id: row.alatId,
-        name: matched ? matched.name : `Alat #${row.alatId}`,
-        jumlah: row.jumlah || 1,
-        // Fallback harga kalau alat tidak ketemu di katalog (mis. sudah dihapus admin).
-        pricePerHari: matched ? matched.price : 40000,
-      };
-    });
-  }, [isPaket, rawPaket, gear]);
+    // 2. Satu alat dari Katalog, dikirim via id (cara baru & disarankan).
+    if (alatId) {
+      const matched = gear.find((g) => String(g.id) === String(alatId));
+
+      return [
+        {
+          id: alatId,
+          name: matched ? matched.name : alat || `Alat #${alatId}`,
+          jumlah: 1,
+          pricePerHari: matched ? matched.price : 40000,
+        },
+      ];
+    }
+
+    // 3. Mode lama: cuma nama teks lewat ?alat=. Coba cocokkan by nama supaya
+    // tetap dapat harga; kalau tidak ketemu, tampilkan tanpa harga pasti.
+    if (alat) {
+      const matched = gear.find(
+        (g) => g.name.toLowerCase() === alat.toLowerCase()
+      );
+
+      return [
+        {
+          id: matched ? matched.id : alat,
+          name: matched ? matched.name : alat,
+          jumlah: 1,
+          pricePerHari: matched ? matched.price : 40000,
+        },
+      ];
+    }
+
+    // 4. Tidak ada data alat sama sekali — jangan tampilkan default palsu.
+    return [];
+  }, [isPaket, rawPaket, alatId, alat, gear]);
 
   // Jumlah hari sewa — dipakai untuk tampilan harga & saat submit,
   // jadi cukup dihitung sekali di sini.
@@ -472,10 +517,9 @@ function CheckoutForm() {
 
     setLoading(true);
 
-    // Kalau dari paket rombongan, pakai total harga asli per alat.
-    // Kalau bukan (alat satuan lewat ?alat=), tetap pakai tarif flat lama.
-    const estimatedPrice =
-      paketItems.length > 0 ? totalPaketHarga : diffDays * 50000;
+    // Semua item (baik dari paket rombongan maupun alat satuan) sekarang
+    // selalu punya harga asli dari katalog, jadi total selalu dari situ.
+    const estimatedPrice = totalPaketHarga;
 
     const payload = {
       start_date: startDate,
@@ -507,7 +551,7 @@ function CheckoutForm() {
       id: backendResult?.id ? String(backendResult.id) : undefined,
       backendId: backendResult?.id || null,
       item: namaAlatGabungan,
-      items: paketItems.length > 0 ? paketItems : undefined,
+      items: paketItems,
       name: name.trim() || "Peminjam",
       whatsapp: phoneCheck.clean || whatsapp.trim(),
       date: `${startDate} s/d ${endDate}`,
@@ -524,6 +568,46 @@ function CheckoutForm() {
 
     setSubmitted(true);
     setLoading(false);
+  }
+
+  // ==========================================
+  // BELUM ADA ALAT YANG DIPILIH SAMA SEKALI
+  // (mis. user buka /user/checkout langsung tanpa lewat Katalog/Rekomendasi)
+  // Jangan tampilkan alat "palsu" — arahkan balik ke Katalog.
+  // ==========================================
+  if (paketItems.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-line bg-white/60 p-10 text-center shadow-sm">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-line bg-paper text-2xl">
+          🎒
+        </div>
+
+        <h1 className="mt-4 font-display text-xl font-bold text-ink">
+          Belum Ada Alat yang Dipilih
+        </h1>
+
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink/65">
+          Silakan pilih alat dari Katalog atau paket dari Rekomendasi
+          Rombongan terlebih dahulu sebelum melanjutkan ke checkout.
+        </p>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/user/katalog"
+            className="rounded-xl bg-ridge px-6 py-2.5 text-xs font-semibold text-fog shadow-sm transition-all hover:bg-ink"
+          >
+            Ke Katalog Alat →
+          </Link>
+
+          <Link
+            href="/user/rekomendasi"
+            className="rounded-xl border border-line bg-paper/60 px-5 py-2.5 text-xs font-semibold text-ink transition-all hover:bg-paper"
+          >
+            Lihat Rekomendasi Rombongan
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   if (submitted) {
@@ -560,24 +644,16 @@ function CheckoutForm() {
           <div className="border-b border-line/40 pb-1.5">
             <span className="text-ink/50">Peralatan:</span>
 
-            {paketItems.length > 0 ? (
-              <ul className="mt-1 space-y-1">
-                {paketItems.map((it) => (
-                  <li key={it.id} className="flex justify-between">
-                    <span className="text-ink/80">{it.name}</span>
-                    <span className="font-mono font-medium text-ink">
-                      × {it.jumlah}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="mt-1 flex justify-between">
-                <span className="font-medium text-ink">
-                  {alat || "Peralatan Pendakian"}
-                </span>
-              </div>
-            )}
+            <ul className="mt-1 space-y-1">
+              {paketItems.map((it) => (
+                <li key={it.id} className="flex justify-between">
+                  <span className="text-ink/80">{it.name}</span>
+                  <span className="font-mono font-medium text-ink">
+                    × {it.jumlah}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className="flex justify-between border-b border-line/40 pb-1.5">
@@ -590,9 +666,7 @@ function CheckoutForm() {
           <div className="flex justify-between pt-0.5">
             <span className="text-ink/50">Total Estimasi Biaya:</span>
             <span className="font-semibold text-ink">
-              {formatRupiah(
-                paketItems.length > 0 ? totalPaketHarga : diffDays * 50000
-              )}
+              {formatRupiah(totalPaketHarga)}
             </span>
           </div>
         </div>
@@ -656,54 +730,45 @@ function CheckoutForm() {
               Alat yang Dipilih
             </label>
 
-            {paketItems.length > 0 ? (
-              // Mode paket rombongan: tampilkan daftar semua item + jumlah + harga.
-              <div className="mt-1.5 space-y-1.5 rounded-xl border border-line bg-paper/60 p-3">
-                {paketItems.map((it) => (
-                  <div
-                    key={it.id}
-                    className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium text-ink/90">
-                        {it.name}
-                      </span>
-                      <span className="text-[11px] text-ink/45">
-                        {formatRupiah(it.pricePerHari)} / hari × {it.jumlah}{" "}
-                        unit
-                      </span>
-                    </div>
-
-                    <span className="font-mono font-semibold text-ink/70">
-                      {formatRupiah(
-                        hitungBiaya({
-                          hargaPerHari: it.pricePerHari,
-                          jumlah: it.jumlah,
-                          durasiHari: diffDays,
-                        })
-                      )}
+            {/* Karena kasus "belum ada alat" sudah ditangani di atas (early return),
+                di sini paketItems pasti berisi minimal 1 item. */}
+            <div className="mt-1.5 space-y-1.5 rounded-xl border border-line bg-paper/60 p-3">
+              {paketItems.map((it) => (
+                <div
+                  key={it.id}
+                  className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium text-ink/90">
+                      {it.name}
+                    </span>
+                    <span className="text-[11px] text-ink/45">
+                      {formatRupiah(it.pricePerHari)} / hari × {it.jumlah}{" "}
+                      unit
                     </span>
                   </div>
-                ))}
 
-                <div className="flex items-center justify-between border-t border-line/60 pt-2.5">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-ink/70">
-                    Total ({diffDays} hari)
-                  </span>
-                  <span className="font-display text-base font-bold text-ink">
-                    {formatRupiah(totalPaketHarga)}
+                  <span className="font-mono font-semibold text-ink/70">
+                    {formatRupiah(
+                      hitungBiaya({
+                        hargaPerHari: it.pricePerHari,
+                        jumlah: it.jumlah,
+                        durasiHari: diffDays,
+                      })
+                    )}
                   </span>
                 </div>
+              ))}
+
+              <div className="flex items-center justify-between border-t border-line/60 pt-2.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-ink/70">
+                  Total ({diffDays} hari)
+                </span>
+                <span className="font-display text-base font-bold text-ink">
+                  {formatRupiah(totalPaketHarga)}
+                </span>
               </div>
-            ) : (
-              // Mode lama: satu alat via query param ?alat=.
-              <input
-                type="text"
-                readOnly
-                value={alat || "Tenda Dome Borneo 4 Person + Matras + Kompor"}
-                className="mt-1.5 w-full rounded-xl border border-line bg-paper/60 px-4 py-2.5 text-sm font-medium text-ink/90 outline-none"
-              />
-            )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
