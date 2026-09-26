@@ -334,7 +334,9 @@ export default function CatalogView() {
             );
 
             const isOutOfStock = item.stock === "merah";
-            const checkoutPath = `/user/checkout?alat=${encodeURIComponent(item.name)}`;
+            // Kirim alatId (bukan cuma nama) supaya halaman checkout bisa
+            // mencocokkan ke katalog dan menampilkan harga aslinya.
+            const checkoutPath = `/user/checkout?alatId=${encodeURIComponent(item.id)}`;
             const targetUrl = role
               ? checkoutPath
               : `/login?redirect=${encodeURIComponent(checkoutPath)}`;
@@ -643,8 +645,8 @@ export default function CatalogView() {
                     <Link
                       href={
                         role
-                          ? `/user/checkout?alat=${encodeURIComponent(selectedGear.name)}`
-                          : `/login?redirect=${encodeURIComponent(`/user/checkout?alat=${encodeURIComponent(selectedGear.name)}`)}`
+                          ? `/user/checkout?alatId=${encodeURIComponent(selectedGear.id)}`
+                          : `/login?redirect=${encodeURIComponent(`/user/checkout?alatId=${encodeURIComponent(selectedGear.id)}`)}`
                       }
                       className="block w-full rounded-xl bg-ridge py-3 text-center text-xs font-bold text-fog shadow-md hover:bg-ink transition-all"
                     >

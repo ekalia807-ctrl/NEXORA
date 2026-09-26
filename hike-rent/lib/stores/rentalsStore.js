@@ -1,11 +1,29 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { RENTAL_STATUS, statusStyle } from "@/constants/rentalStatus";
+import { RENTAL_STATUS } from "@/constants/rentalStatus";
 import { fetchRentalsAction } from "@/app/actions/rentals";
 
 const STORAGE_KEY = "nexora_rentals_v2";
 const EVENT_NAME = "rentals-changed";
+
+// Baca id user yang sedang login dari localStorage["user"]
+// (disimpan oleh halaman Profil / proses login).
+function getCurrentUserId() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    const id = parsed.id ?? parsed.user_id ?? null;
+
+    return id !== null && id !== undefined ? String(id) : null;
+  } catch {
+    return null;
+  }
+}
 
 export function normalizeRental(r) {
   if (!r) return null;
@@ -67,7 +85,7 @@ export function normalizeRental(r) {
     id: r.order_code || formattedId,
     order_code: r.order_code || formattedId,
     backendId: typeof r.id === "number" ? r.id : Number(r.id) || null,
-    user_id: r.user_id || null,
+    user_id: r.user_id !== undefined && r.user_id !== null ? String(r.user_id) : null,
     user: r.user || r.name || r.user_name || "Peminjam",
     name: r.name || r.user || r.user_name || "Peminjam",
     email: r.email || r.user_email || "",
@@ -125,9 +143,30 @@ export function getRentals() {
   return readAll();
 }
 
+// Rental milik user yang sedang login saja — dipakai di halaman Riwayat (user),
+// supaya akun lain / data lama di localStorage yang sama tidak ikut kebaca.
+export function getMyRentals() {
+  const currentUserId = getCurrentUserId();
+
+  // Kalau tidak ada user yang login, jangan tampilkan apa-apa
+  // (lebih aman daripada menampilkan semua data).
+  if (!currentUserId) return [];
+
+  return readAll().filter((r) => String(r.user_id) === currentUserId);
+}
+
 export function addRental(rental) {
   const current = readAll();
-  const normalized = normalizeRental(rental);
+
+  // Kalau pemanggil tidak menyertakan user_id secara eksplisit,
+  // ambil otomatis dari user yang sedang login supaya rental ini
+  // ke-tag dengan benar dan tidak bocor ke akun lain.
+  const rentalWithUser =
+    rental && rental.user_id !== undefined && rental.user_id !== null
+      ? rental
+      : { ...rental, user_id: getCurrentUserId() };
+
+  const normalized = normalizeRental(rentalWithUser);
   const next = [normalized, ...current];
   writeAll(next);
   return next;
@@ -254,10 +293,16 @@ function getSnapshot() {
   return JSON.stringify(readAll());
 }
 
+// Snapshot khusus rental milik user yang sedang login.
+function getMySnapshot() {
+  return JSON.stringify(getMyRentals());
+}
+
 function getServerSnapshot() {
   return JSON.stringify([]);
 }
 
+// Semua rental (dipakai admin: lihat & kelola semua pengajuan).
 export function useRentals() {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   return JSON.parse(snapshot);
@@ -273,4 +318,28 @@ export function useRentalsSync() {
   return rentals;
 }
 
-export { statusStyle };
+// Rental milik user yang sedang login saja (dipakai halaman Riwayat user).
+export function useMyRentals() {
+  const snapshot = useSyncExternalStore(subscribe, getMySnapshot, getServerSnapshot);
+  return JSON.parse(snapshot);
+}
+
+export function useMyRentalsSync() {
+  const rentals = useMyRentals();
+
+  useEffect(() => {
+    syncRentalsFromBackend();
+  }, []);
+
+  return rentals;
+}
+
+export const statusStyle = {
+  Disetujui: "bg-moss text-fog",
+  Aktif: "bg-moss text-fog",
+  "Menunggu verifikasi": "bg-amber text-ink",
+  Diambil: "bg-ridge text-amber",
+  Selesai: "bg-line text-ink/70",
+  Ditolak: "bg-alert text-fog",
+  Dibatalkan: "bg-alert text-fog",
+};

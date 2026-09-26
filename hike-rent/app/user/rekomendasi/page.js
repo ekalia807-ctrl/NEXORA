@@ -74,7 +74,7 @@ function RekomendasiContent() {
   function handleSewaPaketKustom() {
     const paket = tersedia.map((r) => ({ alatId: r.alat.id, jumlah: r.jumlah }));
     window.localStorage.setItem(PAKET_STORAGE_KEY, JSON.stringify(paket));
-    router.push("/user/kalkulator?paket=1");
+    router.push("/user/checkout?paket=1");
   }
 
   function handleSewaOfficialPackage(pkgId) {
@@ -99,7 +99,7 @@ function RekomendasiContent() {
     });
 
     window.localStorage.setItem(PAKET_STORAGE_KEY, JSON.stringify(paketData));
-    router.push("/user/kalkulator?paket=1");
+    router.push("/user/checkout?paket=1");
   }
 
   return (
