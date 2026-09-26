@@ -68,18 +68,18 @@ export default function Hero() {
       <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ridge to-transparent" />
 
       {/* Konten */}
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-16 sm:px-8 sm:py-24">
-        <span className="inline-flex items-center gap-2 rounded-full border border-fog/20 bg-fog/10 px-3.5 py-1.5 text-sm text-fog/90 backdrop-blur-md">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-28">
+        <span className="inline-flex items-center gap-2 rounded-full border border-fog/20 bg-fog/10 px-3.5 py-1.5 text-xs sm:text-sm text-fog/90 backdrop-blur-md">
           <span className="h-1.5 w-1.5 rounded-full bg-amber motion-safe:animate-pulse" />
           Sewa alat pendakian terverifikasi
         </span>
 
-        <h1 className="mt-6 max-w-3xl font-display text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+        <h1 className="mt-6 max-w-3xl font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.08] tracking-tight">
           Alat lengkap, siap pakai,
           <span className="block text-fog/60">tanpa harus punya semuanya.</span>
         </h1>
 
-        <p className="mt-6 max-w-xl text-lg leading-relaxed text-fog/80">
+        <p className="mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-fog/80">
           HIKERENT menyewakan tenda, carrier, sleeping bag, sampai alat masak dari
           penyedia terverifikasi. Cek stok, hitung biaya, ajukan sewa — semua dalam
           satu platform.
@@ -88,14 +88,14 @@ export default function Hero() {
         <div className="mt-9 flex flex-wrap gap-3">
           <Link
             href="/katalog"
-            className="group inline-flex items-center gap-2 rounded-full bg-amber px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-black/20 transition-colors hover:bg-amber/90"
+            className="group inline-flex items-center gap-2 rounded-full bg-amber px-6 py-3 text-xs sm:text-sm font-semibold text-ink shadow-lg shadow-black/20 transition-colors hover:bg-amber/90"
           >
             Lihat katalog alat
             <ArrowIcon />
           </Link>
           <Link
             href="/user/kalkulator"
-            className="inline-flex items-center rounded-full border border-fog/25 bg-fog/10 px-6 py-3 text-sm font-medium text-fog backdrop-blur-md transition-colors hover:border-fog/50 hover:bg-fog/15"
+            className="inline-flex items-center rounded-full border border-fog/25 bg-fog/10 px-6 py-3 text-xs sm:text-sm font-medium text-fog backdrop-blur-md transition-colors hover:border-fog/50 hover:bg-fog/15"
           >
             Hitung estimasi biaya
           </Link>
