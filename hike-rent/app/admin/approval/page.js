@@ -7,24 +7,18 @@ import { createRentalStatusLogAction } from "@/app/actions/rentalStatusLogs";
 
 import RentalApprovalCard from "./components/RentalApprovalCard";
 import PaymentProofModal from "./components/PaymentProofModal";
+import ApprovalHeader from "./components/ApprovalHeader";
+import ApprovalFilterBar from "./components/ApprovalFilterBar";
 
 export default function AdminApprovalPage() {
   const allRentals = useRentalsSync();
 
-  // Tab & search states
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
-
-  // Modal bukti bayar
   const [proofModalUrl, setProofModalUrl] = useState(null);
-
-  // Status notes input state per rental id
   const [statusNotes, setStatusNotes] = useState({});
-
-  // Loading state per action
   const [loadingId, setLoadingId] = useState(null);
 
-  // Tab counts
   const counts = useMemo(() => {
     return {
       all: allRentals.length,
@@ -36,17 +30,14 @@ export default function AdminApprovalPage() {
     };
   }, [allRentals]);
 
-  // Filter list
   const filteredRentals = useMemo(() => {
     return allRentals.filter((req) => {
-      // Filter tab
       if (activeTab === "pending" && !(req.status === "Menunggu verifikasi" || req.status === "diajukan" || req.status === "menunggu_verifikasi")) return false;
       if (activeTab === "approved" && !(req.status === "Disetujui" || req.status === "diverifikasi" || req.status === "aktif")) return false;
       if (activeTab === "borrowed" && !(req.status === "Diambil" || req.status === "diambil")) return false;
       if (activeTab === "done" && !(req.status === "Selesai" || req.status === "dikembalikan" || req.status === "selesai")) return false;
       if (activeTab === "rejected" && !(req.status === "Ditolak" || req.status === "ditolak" || req.status === "Dibatalkan")) return false;
 
-      // Filter search
       if (search.trim()) {
         const q = search.toLowerCase();
         const matchName = (req.name || req.user || "").toLowerCase().includes(q);
@@ -60,10 +51,6 @@ export default function AdminApprovalPage() {
     });
   }, [allRentals, activeTab, search]);
 
-  /**
-   * Mengubah status peminjaman dengan validasi urutan
-   * Urutan valid: Menunggu verifikasi -> Disetujui -> Diambil -> Selesai
-   */
   async function handleStatusTransition(req, targetStatus, customNote = "") {
     const current = req.status;
 
@@ -197,79 +184,16 @@ export default function AdminApprovalPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Halaman */}
-      <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
-                Operasional Toko
-              </span>
-              <span className="h-1 w-1 rounded-full bg-ink/30" />
-              <span className="font-mono text-[11px] text-ink/50">Admin Panel</span>
-            </div>
-            <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
-              Approval Pengajuan Sewa
-            </h1>
-            <p className="mt-1.5 text-sm text-ink/65 leading-relaxed">
-              Verifikasi permohonan peminjaman, periksa bukti bayar, konfirmasi serah terima barang, dan pantau pengembalian alat.
-            </p>
-          </div>
+      <ApprovalHeader onSync={syncRentalsFromBackend} />
 
-          <button
-            type="button"
-            onClick={() => syncRentalsFromBackend()}
-            className="flex items-center gap-2 rounded-xl border border-line bg-paper/60 px-4 py-2 text-xs font-semibold text-ink hover:bg-paper transition-all shadow-xs"
-          >
-            <span>🔄</span>
-            <span>Sinkronkan DB</span>
-          </button>
-        </div>
-      </div>
+      <ApprovalFilterBar
+        tabs={tabs}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        search={search}
+        onSearchChange={setSearch}
+      />
 
-      {/* Tabs & Search Filter */}
-      <div className="rounded-2xl border border-line bg-white/70 p-4 sm:p-5 shadow-sm backdrop-blur-md space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {tabs.map((tab) => {
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
-                    active
-                      ? "bg-ridge text-fog shadow-sm"
-                      : "bg-paper/50 text-ink/70 hover:bg-paper hover:text-ink border border-line/60"
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-mono ${
-                      active ? "bg-white/20 text-fog" : "bg-black/5 text-ink/60"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="w-full sm:w-72">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari ID, peminjam, alat, WA..."
-              className="w-full rounded-xl border border-line bg-paper/60 px-3.5 py-2 text-xs text-ink placeholder:text-ink/40 outline-none focus:border-ridge focus:bg-white transition-all"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Daftar Pengajuan */}
       <div className="space-y-4">
         {filteredRentals.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-line bg-white/60 p-12 text-center shadow-sm">
@@ -300,7 +224,6 @@ export default function AdminApprovalPage() {
         )}
       </div>
 
-      {/* Modal Preview Bukti Bayar */}
       <PaymentProofModal
         proofModalUrl={proofModalUrl}
         onClose={() => setProofModalUrl(null)}

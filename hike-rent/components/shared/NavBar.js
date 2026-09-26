@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutAction, getMeAction } from "@/app/actions/auth";
+import { Brand, ArrowBackIcon, menuGuest, menuUser, menuAdmin } from "./nav/NavBrand";
+import NavDrawer from "./nav/NavDrawer";
 
 function subscribe(callback) {
   window.addEventListener("storage", callback);
@@ -20,77 +22,6 @@ function getRoleSnapshot() {
 
 function getServerRoleSnapshot() {
   return null;
-}
-
-// Menu khusus Guest (Tamu): Hanya Beranda dan Katalog
-const menuGuest = [
-  { href: "/", label: "Beranda", desc: "Halaman utama HIKERENT" },
-  { href: "/katalog", label: "Katalog Alat", desc: "Jelajah peralatan & cek ketersediaan" },
-];
-
-// Menu khusus User (Peminjam terdaftar)
-const menuUser = [
-  { href: "/user/katalog", label: "Katalog Alat" },
-  { href: "/", label: "Beranda" },
-  { href: "/user/rekomendasi", label: "Rekomendasi Rombongan" },
-  { href: "/user/wishlist", label: "Wishlist Saya" },
-  { href: "/user/kalkulator", label: "Kalkulator Biaya" },
-  { href: "/user/checkout", label: "Checkout Sewa" },
-  { href: "/user/riwayat", label: "Riwayat & Status" },
-  { href: "/user/profil", label: "Profil Saya" },
-];
-
-// Menu khusus Admin
-const menuAdmin = [
-  { href: "/admin/dashboard", label: "Dashboard Admin" },
-  { href: "/admin/approval", label: "Approval Pengajuan" },
-  { href: "/admin/katalog", label: "Katalog Alat" },
-  { href: "/admin/packages", label: "Paket Bundling" },
-  { href: "/admin/accounts", label: "Akun Pengguna" },
-  { href: "/admin/pendapatan", label: "Rekap Penghasilan" },
-  { href: "/admin/reports", label: "Laporan Sistem" },
-  { href: "/admin/history", label: "Histori Peminjaman" },
-];
-
-function MountainIcon({ className = "h-4 w-4" }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-      <path d="M2 20 9 7l4 7 2.5-4L22 20H2Z" />
-    </svg>
-  );
-}
-
-function ArrowBackIcon({ className = "h-4 w-4" }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M19 12H5M12 19l-7-7 7-7" />
-    </svg>
-  );
-}
-
-function Brand({ onClick, role }) {
-  const href = role === "admin" ? "/admin/dashboard" : "/";
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
-    >
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ridge text-amber">
-        <MountainIcon />
-      </span>
-      <span className="font-display text-lg font-bold tracking-tight text-ink">HIKERENT</span>
-    </Link>
-  );
 }
 
 export default function NavBar() {
@@ -148,13 +79,10 @@ export default function NavBar() {
 
   return (
     <>
-      {/* Header utama: kiri = logo + menu + role, kanan = Keluar / Masuk.
-          Di area admin dibuat selebar layar supaya sejajar dengan sidebar. */}
       <header className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-xl">
         <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           {/* Kiri: Tombol Back, Brand Logo, Menu samping, Role */}
           <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
-            {/* Tombol Arrow Back (Navigasi kembali riwayat browser) */}
             <button
               type="button"
               onClick={() => router.back()}
@@ -187,10 +115,11 @@ export default function NavBar() {
             {/* Status role */}
             {role ? (
               <span
-                className={`hidden rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex ${role === "admin"
+                className={`hidden rounded-full border px-3 py-1 text-xs font-medium sm:inline-flex ${
+                  role === "admin"
                     ? "border-amber/40 bg-amber/10 text-amber"
                     : "border-line bg-white/60 text-ink/70"
-                  }`}
+                }`}
               >
                 {role === "admin" ? "Admin" : "Peminjam"}
               </span>
@@ -221,93 +150,14 @@ export default function NavBar() {
         </div>
       </header>
 
-      {/* Backdrop overlay saat menu samping terbuka */}
-      <div
-        className={`fixed inset-0 z-50 bg-ink/50 backdrop-blur-xs transition-opacity duration-300 ${drawerOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-          }`}
-        onClick={() => setDrawerOpen(false)}
-        aria-hidden="true"
+      <NavDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        role={role}
+        items={items}
+        pathname={pathname}
+        onLogout={handleLogout}
       />
-
-      {/* Menu samping (slide-over dari kiri, searah dengan tombol Menu) */}
-      <aside
-        aria-label="Navigasi menu samping"
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-full max-w-sm flex-col justify-between border-r border-line bg-paper p-6 shadow-2xl transition-transform duration-300 ease-out ${drawerOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-      >
-        <div>
-          {/* Header drawer */}
-          <div className="flex items-center justify-between border-b border-line pb-5">
-            <Brand onClick={() => setDrawerOpen(false)} role={role} />
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              aria-label="Tutup menu"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-ink transition-colors hover:border-ink/40 hover:bg-white/70"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Info status pengguna */}
-          <div className="mt-5 rounded-xl border border-line bg-white/50 p-4">
-            <span className="text-xs text-ink/50">Akses sekarang</span>
-            <div className="mt-0.5 font-display text-sm font-semibold capitalize text-ink">
-              {role === "admin"
-                ? "Administrator"
-                : role === "user"
-                  ? "Peminjam (Terverifikasi)"
-                  : "Tamu (Mode Jelajah)"}
-            </div>
-            {!role && (
-              <p className="mt-1 text-xs text-ink/60">
-                Menu kalkulator & riwayat akan tersedia setelah Anda masuk ke akun.
-              </p>
-            )}
-          </div>
-
-          {/* Daftar menu */}
-          <nav className="mt-6 flex flex-col gap-1">
-            <div className="px-1 pb-1 text-xs font-medium text-ink/40">Menu tersedia</div>
-            {items.map((item) => {
-              const active =
-                item.href === "/"
-                  ? pathname === "/"
-                  : item.href === "/admin/dashboard"
-                    ? pathname === item.href
-                    : pathname === item.href || pathname?.startsWith(item.href + "/");
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setDrawerOpen(false)}
-                  className={`flex items-center justify-between rounded-lg px-3.5 py-2.5 text-sm transition-colors ${active
-                      ? "bg-ridge font-medium text-fog"
-                      : "text-ink/75 hover:bg-white/70 hover:text-ink"
-                    }`}
-                >
-                  <span>{item.label}</span>
-                  {active && <span className="text-xs text-amber">●</span>}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Footer drawer: aksi keluar hanya untuk user yang sudah login */}
-        {role && (
-          <div className="border-t border-line pt-5">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex w-full items-center justify-center rounded-lg border border-line bg-white/50 py-2.5 text-sm font-medium text-ink transition-colors hover:border-alert hover:text-alert"
-            >
-              Keluar dari Akun
-            </button>
-          </div>
-        )}
-      </aside>
     </>
   );
 }

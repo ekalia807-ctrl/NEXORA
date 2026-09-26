@@ -3,43 +3,21 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
   useCatalogSync,
-  addCatalogItem,
-  updateCatalogItem,
-  deleteCatalogItem,
   syncCatalogFromBackend,
   slugify,
 } from "@/lib/stores/catalogStore";
+import { uploadGearImageAction } from "@/app/actions/gear";
 import {
-  createGearAction,
-  updateGearAction,
-  deleteGearAction,
-  uploadGearImageAction,
-} from "@/app/actions/gear";
+  stockOptions,
+  fallbackCategories,
+  emptyForm,
+} from "../constants/catalogConstants";
+import {
+  submitCatalogItem,
+  deleteCatalogItemWithBackend,
+} from "../utils/catalogMutations";
 
-export const stockOptions = [
-  { value: "hijau", label: "Hijau — Stok Tersedia & Aman" },
-  { value: "kuning", label: "Kuning — Stok Terbatas / Menipis" },
-  { value: "merah", label: "Merah — Stok Habis / Kosong" },
-];
-
-export const fallbackCategories = [
-  { id: 1, name: "Tenda", slug: "tenda" },
-  { id: 2, name: "Carrier", slug: "carrier" },
-  { id: 3, name: "Sepatu", slug: "sepatu" },
-];
-
-export const emptyForm = {
-  name: "",
-  slug: "",
-  category_id: 1,
-  price: "",
-  unit: "per hari",
-  total_stock: 5,
-  available_stock: 5,
-  stock_status: "hijau",
-  image_url: "",
-  note: "",
-};
+export { stockOptions, fallbackCategories, emptyForm };
 
 export function useAdminCatalog() {
   const gear = useCatalogSync();
@@ -232,125 +210,34 @@ export function useAdminCatalog() {
     e.preventDefault();
     setSubmitting(true);
 
-    const priceNum = Number(form.price) || 0;
-    const totalStockNum = Number(form.total_stock) || 0;
-    const availStockNum = Number(form.available_stock) || 0;
-    const catIdNum = Number(form.category_id) || 1;
-    const selectedCategory = activeCategories.find((c) => Number(c.id) === catIdNum);
-    const catName = selectedCategory?.name || "Peralatan";
-
-    const backendPayload = {
-      category_id: catIdNum,
-      name: form.name.trim(),
-      slug: (form.slug || slugify(form.name)).trim(),
-      price_per_day: priceNum,
-      unit: form.unit?.trim() || "per hari",
-      total_stock: totalStockNum,
-      available_stock: availStockNum,
-      stock_status: form.stock_status || "hijau",
-      note: form.note?.trim() || "",
-      image_url: form.image_url?.trim() || null,
-    };
-
-    const localItem = {
-      name: form.name.trim(),
-      slug: (form.slug || slugify(form.name)).trim(),
-      price: priceNum,
-      price_per_day: priceNum,
-      unit: form.unit?.trim() || "per hari",
-      categoryId: catIdNum,
-      category_id: catIdNum,
-      category: catName,
-      category_name: catName,
-      totalStock: totalStockNum,
-      total_stock: totalStockNum,
-      availableStock: availStockNum,
-      available_stock: availStockNum,
-      stock: form.stock_status,
-      stock_status: form.stock_status,
-      note: form.note?.trim() || "",
-      image: form.image_url?.trim() || "",
-      imageUrl: form.image_url?.trim() || "",
-      image_url: form.image_url?.trim() || "",
-    };
-
-    if (editingId) {
-      const oldItem = gear.find((g) => g.id === editingId);
-      const targetBackendId = oldItem?.backendId || (Number(editingId) || null);
-
-      updateCatalogItem(editingId, localItem);
+    try {
+      const toastResult = await submitCatalogItem({
+        form,
+        editingId,
+        gear,
+        activeCategories,
+      });
       closeForm();
-
-      if (targetBackendId) {
-        const res = await updateGearAction(targetBackendId, backendPayload);
-        if (res.success) {
-          setToast({
-            type: "success",
-            text: `Data alat "${form.name}" berhasil diperbarui di database backend & katalog!`,
-          });
-        } else {
-          setToast({
-            type: "info",
-            text: `Alat diperbarui di cache lokal. (Server notice: ${res.error || "Sesi admin diperlukan"})`,
-          });
-        }
-      } else {
-        setToast({
-          type: "success",
-          text: `Alat "${form.name}" diperbarui di katalog!`,
-        });
-      }
-    } else {
-      addCatalogItem(localItem);
-      closeForm();
-
-      const res = await createGearAction(backendPayload);
-      if (res.success && res.data) {
-        const newBackendId = res.data.gear?.id || res.data.id;
-        if (newBackendId) {
-          updateCatalogItem(localItem.id || slugify(form.name), {
-            backendId: newBackendId,
-            id: String(newBackendId),
-          });
-        }
-        setToast({
-          type: "success",
-          text: `Alat "${form.name}" berhasil ditambahkan ke tabel gear database backend!`,
-        });
-      } else {
-        setToast({
-          type: "info",
-          text: `Alat ditambahkan ke cache lokal. (Server notice: ${res.error || "Sesi admin diperlukan"})`,
-        });
-      }
+      if (toastResult) setToast(toastResult);
+    } catch (err) {
+      setToast({
+        type: "error",
+        text: `Gagal menyimpan alat: ${err.message}`,
+      });
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   async function handleDelete(id) {
-    const itemToDelete = gear.find((g) => g.id === id);
-    const targetBackendId = itemToDelete?.backendId || (Number(id) || null);
-
-    deleteCatalogItem(id);
     setConfirmDeleteId(null);
-
-    if (targetBackendId) {
-      const res = await deleteGearAction(targetBackendId);
-      if (res.success) {
-        setToast({
-          type: "success",
-          text: "Alat berhasil dihapus dari tabel gear database backend & katalog.",
-        });
-      } else {
-        setToast({
-          type: "info",
-          text: `Alat dihapus dari katalog lokal. (Server notice: ${res.error || "Belum terhapus di backend"})`,
-        });
-      }
-    } else {
+    try {
+      const toastResult = await deleteCatalogItemWithBackend(id, gear);
+      if (toastResult) setToast(toastResult);
+    } catch (err) {
       setToast({
-        type: "success",
-        text: "Alat berhasil dihapus dari katalog.",
+        type: "error",
+        text: `Gagal menghapus alat: ${err.message}`,
       });
     }
   }
