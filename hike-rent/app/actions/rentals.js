@@ -7,6 +7,7 @@ import {
   updateRental,
   deleteRental,
 } from "@/services/gateway/rentals";
+import { createRentalItem } from "@/services/gateway/rentalItems";
 import { getCurrentSession } from "@/lib/server/session";
 import { createRentalStatusLogAction } from "./rentalStatusLogs";
 
@@ -71,8 +72,49 @@ export async function createRentalAction(rentalData) {
 
     const data = await createRental(payload, bearerToken);
 
-    // Rekam log inisial 'diajukan' ke tabel rental_status_logs
     if (data?.id) {
+      // 1. Rekam rincian item ke tabel rental_items di database backend
+      const itemsToRecord =
+        Array.isArray(rentalData.items) && rentalData.items.length > 0
+          ? rentalData.items
+          : rentalData.gear_id
+          ? [
+              {
+                id: rentalData.gear_id,
+                jumlah: rentalData.quantity || 1,
+                pricePerHari: rentalData.price_per_day || 0,
+                subtotal: rentalData.total_amount || 0,
+              },
+            ]
+          : [];
+
+      if (itemsToRecord.length > 0) {
+        await Promise.all(
+          itemsToRecord.map(async (it) => {
+            try {
+              const gearId = Number(it.id || it.gear_id || it.alatId || 1);
+              const qty = Number(it.jumlah || it.quantity || it.qty || 1);
+              const pricePerDay = Number(it.pricePerHari || it.price_per_day || it.price || 0);
+              const subtotal = Number(it.subtotal || (qty * pricePerDay * (payload.duration_nights || 1)));
+
+              await createRentalItem(
+                {
+                  rental_id: data.id,
+                  gear_id: gearId,
+                  quantity: qty,
+                  price_per_day: pricePerDay,
+                  subtotal,
+                },
+                bearerToken
+              );
+            } catch (itemErr) {
+              console.warn(`[rental_items] Catatan: Gagal simpan item gear ${it.id}:`, itemErr.message);
+            }
+          })
+        );
+      }
+
+      // 2. Rekam log inisial 'diajukan' ke tabel rental_status_logs
       try {
         await createRentalStatusLogAction({
           rental_id: data.id,
