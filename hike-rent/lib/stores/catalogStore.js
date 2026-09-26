@@ -42,8 +42,8 @@ export function normalizeBackendGear(g) {
     (Number(g.available_stock) > 2
       ? "hijau"
       : Number(g.available_stock) > 0
-      ? "kuning"
-      : "merah");
+        ? "kuning"
+        : "merah");
   const priceVal = Number(g.price_per_day ?? g.price ?? 0);
   const rawImage =
     g.image_url ?? g.image ?? g.foto ?? g["URL FOTO"] ?? g.url_foto ?? "";
@@ -163,14 +163,14 @@ export function updateCatalogItem(id, patch) {
           patch.totalStock !== undefined
             ? Number(patch.totalStock)
             : patch.total_stock !== undefined
-            ? Number(patch.total_stock)
-            : it.totalStock,
+              ? Number(patch.total_stock)
+              : it.totalStock,
         availableStock:
           patch.availableStock !== undefined
             ? Number(patch.availableStock)
             : patch.available_stock !== undefined
-            ? Number(patch.available_stock)
-            : it.availableStock,
+              ? Number(patch.available_stock)
+              : it.availableStock,
         stock: patch.stock || patch.stock_status || it.stock,
       };
       if (
