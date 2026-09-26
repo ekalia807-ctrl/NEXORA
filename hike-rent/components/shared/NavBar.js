@@ -60,6 +60,23 @@ function MountainIcon({ className = "h-4 w-4" }) {
   );
 }
 
+function ArrowBackIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
 function Brand({ onClick, role }) {
   const href = role === "admin" ? "/admin/dashboard" : "/";
   return (
@@ -135,8 +152,19 @@ export default function NavBar() {
           Di area admin dibuat selebar layar supaya sejajar dengan sidebar. */}
       <header className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-xl">
         <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          {/* Kiri */}
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          {/* Kiri: Tombol Back, Brand Logo, Menu samping, Role */}
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
+            {/* Tombol Arrow Back (Navigasi kembali riwayat browser) */}
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Kembali ke halaman sebelumnya"
+              title="Kembali"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white/70 text-ink transition-colors hover:border-ridge/50 hover:bg-white hover:text-ridge focus-visible:outline focus-visible:outline-2 focus-visible:outline-ridge"
+            >
+              <ArrowBackIcon className="h-4 w-4" />
+            </button>
+
             <Brand role={role} />
 
             <span className="hidden h-5 w-px bg-line sm:block" aria-hidden="true" />

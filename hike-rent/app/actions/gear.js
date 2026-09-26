@@ -1,5 +1,7 @@
 "use server";
 
+import fs from "fs/promises";
+import path from "path";
 import {
   getGear,
   getGearById,
@@ -62,5 +64,38 @@ export async function deleteGearAction(id) {
     return { success: true, data };
   } catch (err) {
     return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Upload gambar alat dari admin ke server lokal (public/uploads/)
+ */
+export async function uploadGearImageAction(formData) {
+  try {
+    const file = formData.get("file");
+    if (!file || typeof file === "string") {
+      return { success: false, error: "File gambar tidak ditemukan." };
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Pastikan direktori public/uploads sudah dibuat
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    // Format nama file aman dengan timestamp unik
+    const originalName = file.name || "gear.jpg";
+    const ext = path.extname(originalName) || ".jpg";
+    const baseClean = path.basename(originalName, ext).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const uniqueFileName = `${baseClean}-${Date.now()}${ext.toLowerCase()}`;
+    const filePath = path.join(uploadDir, uniqueFileName);
+
+    await fs.writeFile(filePath, buffer);
+
+    const imageUrl = `/uploads/${uniqueFileName}`;
+    return { success: true, url: imageUrl };
+  } catch (err) {
+    return { success: false, error: err.message || "Gagal mengunggah gambar." };
   }
 }
