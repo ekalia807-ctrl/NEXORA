@@ -120,7 +120,7 @@ function RegisterForm() {
         window.dispatchEvent(new Event("role-changed"));
 
         setToast({ type: "success", message: res.message || "Pendaftaran dan login berhasil! Mengalihkan..." });
-        setTimeout(() => router.push(safeRedirect || "/user/dashboard"), 600);
+        setTimeout(() => router.push(safeRedirect || "/user/katalog"), 600);
       } else {
         setToast({ type: "success", message: res.message || "Pendaftaran akun berhasil. Mengalihkan ke halaman masuk..." });
         setTimeout(() => router.push(loginHref), 1200);

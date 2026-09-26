@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRentalsSync, updateRentalStatus } from "@/lib/stores/rentalsStore";
+import { useRentalsSync, updateRentalStatus, syncRentalsFromBackend } from "@/lib/stores/rentalsStore";
 import { statusStyle } from "@/constants/rentalStatus";
 import { updateRentalAction } from "@/app/actions/rentals";
 import { createRentalStatusLogAction } from "@/app/actions/rentalStatusLogs";
@@ -112,29 +112,50 @@ export default function AdminApprovalPage() {
     // 1. Update reactive local store
     updateRentalStatus(req.id, targetStatus, extraPatch, auditEntry);
 
-    // 2. Update backend rental if backendId exists
-    if (req.backendId) {
+    // Cari ID integer backend (jika req.backendId kosong tapi req.id angka/ditemukan)
+    const rentalBackendId =
+      Number(req.backendId) ||
+      (typeof req.id === "number" ? req.id : (!isNaN(Number(req.id)) ? Number(req.id) : null));
+
+    // 2. Update backend rental table jika rentalBackendId valid
+    if (rentalBackendId) {
       try {
-        await updateRentalAction(req.backendId, {
+        await updateRentalAction(rentalBackendId, {
           status: backendStatus,
           note: noteText,
+          notes: noteText,
         });
       } catch (err) {
         console.warn("Update rental backend deferred:", err.message);
       }
     }
 
-    // 3. Record audit trail log ke backend / rentalStatusLogs
-    try {
-      await createRentalStatusLogAction({
-        rental_id: req.backendId || 1,
-        status: backendStatus,
-        notes: noteText,
-        changed_by: "Admin Rental (NEXORA)",
-      });
-    } catch (err) {
-      console.warn("Audit status log deferred:", err.message);
+    // 3. Record audit trail log ke backend table rental_status_logs
+    if (rentalBackendId) {
+      try {
+        // Petakan ke enum resmi kolom 'step' di database:
+        // enum: 'diajukan' | 'diverifikasi' | 'diambil' | 'dikembalikan'
+        let stepEnum = "diverifikasi";
+        if (targetStatus === "Disetujui") stepEnum = "diverifikasi";
+        else if (targetStatus === "Diambil") stepEnum = "diambil";
+        else if (targetStatus === "Selesai") stepEnum = "dikembalikan";
+        else if (targetStatus === "Menunggu verifikasi") stepEnum = "diajukan";
+        else stepEnum = "diverifikasi";
+
+        await createRentalStatusLogAction({
+          rental_id: rentalBackendId,
+          step: stepEnum,
+          note: noteText,
+        });
+      } catch (err) {
+        console.warn("Audit status log deferred:", err.message);
+      }
     }
+
+    // 4. Sinkronkan ulang data dari backend agar state lokal selalu akurat
+    try {
+      await syncRentalsFromBackend();
+    } catch {}
 
     // Reset input note
     setStatusNotes((prev) => ({ ...prev, [req.id]: "" }));

@@ -37,7 +37,7 @@ export default function RequireAuth({ children, allow }) {
   }, [role]);
 
   const allowed = role && (!allow || allow.includes(role));
-  const roleHome = role === "admin" ? "/admin/dashboard" : "/user/dashboard";
+  const roleHome = role === "admin" ? "/admin/dashboard" : "/user/katalog";
 
   useEffect(() => {
     if (checkingServer) return;

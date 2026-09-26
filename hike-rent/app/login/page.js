@@ -62,7 +62,7 @@ function LoginForm() {
       if (role === "admin") {
         router.push("/admin/dashboard");
       } else {
-        router.push(redirect || "/user/dashboard");
+        router.push(redirect || "/user/katalog");
       }
     } catch (err) {
       setError(err.message || "Gagal menghubungi server database kampus. Silakan coba lagi.");

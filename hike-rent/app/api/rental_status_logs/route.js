@@ -43,11 +43,25 @@ export async function POST(request) {
       );
     }
 
+    let stepEnum = body.step || body.status || "diajukan";
+    const s = String(stepEnum).toLowerCase().trim();
+    if (s === "menunggu verifikasi" || s === "menunggu_verifikasi" || s === "diajukan") {
+      stepEnum = "diajukan";
+    } else if (s === "disetujui" || s === "diverifikasi" || s === "aktif") {
+      stepEnum = "diverifikasi";
+    } else if (s === "diambil") {
+      stepEnum = "diambil";
+    } else if (s === "selesai" || s === "dikembalikan") {
+      stepEnum = "dikembalikan";
+    } else {
+      stepEnum = "diverifikasi";
+    }
+
     const payload = {
       rental_id: Number(body.rental_id),
-      status: body.status || "diajukan",
-      notes: body.notes || `Status diubah menjadi ${body.status}`,
-      changed_by: body.changed_by || "Admin",
+      step: stepEnum,
+      note: body.note || body.notes || `Status diubah menjadi ${stepEnum}`,
+      changed_by: Number(body.changed_by) || 3,
     };
 
     const created = await createRentalStatusLog(payload, token);

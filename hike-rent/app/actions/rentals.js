@@ -8,6 +8,7 @@ import {
   deleteRental,
 } from "@/services/gateway/rentals";
 import { getCurrentSession } from "@/lib/server/session";
+import { createRentalStatusLogAction } from "./rentalStatusLogs";
 
 /**
  * Mengambil daftar seluruh transaksi rental
@@ -54,6 +55,19 @@ export async function createRentalAction(rentalData) {
     };
 
     const data = await createRental(payload, bearerToken);
+
+    // Rekam log inisial 'diajukan' ke tabel rental_status_logs
+    if (data?.id) {
+      try {
+        await createRentalStatusLogAction({
+          rental_id: data.id,
+          step: "diajukan",
+          note: `Pengajuan sewa baru: ${payload.notes || "Peralatan pendakian"}`,
+          changed_by: userId,
+        });
+      } catch {}
+    }
+
     return { success: true, data };
   } catch (err) {
     return { success: false, error: err.message };

@@ -28,7 +28,7 @@ const GROUPS = [
 export default function Footer() {
   return (
     <footer className="border-t border-black/10 bg-ridge text-xs leading-relaxed text-fog/75">
-      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+      <div className="w-full px-6 py-10 sm:px-8 lg:px-8">
         <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-[minmax(0,2fr)_1fr_1fr]">
           <div className="col-span-2 md:col-span-1">
             <h2 className="font-semibold text-fog">NEXORA</h2>

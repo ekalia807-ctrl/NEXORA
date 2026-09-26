@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { getMeAction } from "@/app/actions/auth";
+import { useMyRentalsSync, statusStyle } from "@/lib/stores/rentalsStore";
+import { formatRupiah } from "@/lib/utils/hitungBiaya";
 
 export default function ProfilPage() {
   const [name, setName] = useState("");
@@ -11,6 +14,9 @@ export default function ProfilPage() {
   const [role, setRole] = useState("user");
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const rentals = useMyRentalsSync();
+  const recentRentals = rentals.slice(0, 5);
 
   // Ambil data profil dari sesi aktif / localStorage
   useEffect(() => {
@@ -70,6 +76,7 @@ export default function ProfilPage() {
 
   return (
     <div className="space-y-6">
+      {/* Kartu Profil Pengguna */}
       <div className="rounded-2xl border border-line bg-white/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line/60 pb-4">
           <div>
@@ -154,6 +161,90 @@ export default function ProfilPage() {
               </button>
             </div>
           </form>
+        )}
+      </div>
+
+      {/* Aktivitas Transaksi Sewa Terbaru */}
+      <div className="rounded-2xl border border-line bg-white/80 p-6 sm:p-8 shadow-sm backdrop-blur-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line/60 pb-4">
+          <div>
+            <h2 className="font-display text-lg sm:text-xl font-bold text-ink">
+              Transaksi Sewa Terbaru
+            </h2>
+            <p className="mt-0.5 text-xs text-ink/65">
+              Pantau status peminjaman peralatan terakhir yang kamu ajukan.
+            </p>
+          </div>
+          <Link
+            href="/user/riwayat"
+            className="rounded-xl border border-line bg-paper/60 px-4 py-2 text-xs font-semibold text-ink hover:bg-paper transition-all"
+          >
+            Lihat Semua Riwayat →
+          </Link>
+        </div>
+
+        {recentRentals.length === 0 ? (
+          <div className="py-12 text-center">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-paper border border-line text-lg">
+              🎒
+            </span>
+            <p className="mt-3 text-sm font-medium text-ink/70">
+              Belum ada transaksi sewa yang tercatat.
+            </p>
+            <p className="mt-1 text-xs text-ink/50">
+              Mulai sewa peralatan pendakian terbaik untuk petualanganmu berikutnya.
+            </p>
+            <div className="mt-4">
+              <Link
+                href="/user/katalog"
+                className="inline-block rounded-xl bg-ridge px-5 py-2 text-xs font-semibold text-fog hover:bg-ink transition-all shadow-sm"
+              >
+                Jelajahi Katalog Alat →
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 divide-y divide-line/60">
+            {recentRentals.map((r) => (
+              <div
+                key={r.id}
+                className="py-4 flex flex-wrap items-center justify-between gap-4 transition-colors hover:bg-paper/30 px-2 rounded-xl"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[11px] font-bold text-ink/60 bg-paper px-2 py-0.5 rounded border border-line">
+                      {r.id}
+                    </span>
+                    <strong className="text-sm font-semibold text-ink">
+                      {r.item}
+                    </strong>
+                  </div>
+                  <div className="mt-1 text-xs text-ink/50">
+                    {r.date} • {formatRupiah(r.total || r.total_price || 0)}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+                      statusStyle[r.status] || "bg-amber text-ink"
+                    }`}
+                  >
+                    {r.status}
+                  </span>
+
+                  {r.status === "Disetujui" && (
+                    <Link
+                      href={`/user/payment?rentalId=${r.id}`}
+                      className="rounded-lg bg-ridge px-3.5 py-1 text-xs font-semibold text-fog hover:bg-ink transition-colors shadow-sm"
+                    >
+                      Bayar Sekarang →
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

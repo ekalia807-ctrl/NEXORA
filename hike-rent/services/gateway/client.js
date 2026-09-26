@@ -45,9 +45,20 @@ export async function apiFetch(endpoint, options = {}) {
     headers["Authorization"] = `Bearer ${bearerToken}`;
   }
 
+  // Bypass Apache HTTP server restrictions that block PUT/PATCH/DELETE with 403 Forbidden
+  const rawMethod = (options.method || "GET").toUpperCase();
+  let fetchMethod = rawMethod;
+  const overrideHeaders = {};
+
+  if (rawMethod === "PUT" || rawMethod === "PATCH" || rawMethod === "DELETE") {
+    fetchMethod = "POST";
+    overrideHeaders["X-HTTP-Method-Override"] = rawMethod;
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: { ...headers, ...options.headers },
+    method: fetchMethod,
+    headers: { ...headers, ...overrideHeaders, ...options.headers },
   });
 
   const data = await res.json().catch(() => ({}));
