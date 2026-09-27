@@ -64,13 +64,13 @@ export function useCheckoutInputHandlers({
     if (!digitsOnly) {
       setErrors((prev) => ({
         ...prev,
-        whatsapp: "Teks yang ditempel tidak mengandung angka valid.",
+        whatsapp: "Nomor WhatsApp hanya boleh berisi angka ya.",
       }));
       return;
     }
     setWhatsapp((prev) => {
       const next = (prev + digitsOnly).slice(0, 15);
-      const check = validatePhone(next);
+      const check = validatePhone(next, true);
       setErrors((p) => ({
         ...p,
         whatsapp: check.isValid ? "" : check.message,
@@ -83,18 +83,40 @@ export function useCheckoutInputHandlers({
     const raw = e.target.value;
     const clean = raw.replace(/\D/g, "").slice(0, 15);
     setWhatsapp(clean);
+
     if (errors.whatsapp) {
-      const check = validatePhone(clean);
-      if (check.isValid) {
-        setErrors((prev) => ({ ...prev, whatsapp: "" }));
+      if (!clean) {
+        setErrors((prev) => ({
+          ...prev,
+          whatsapp: "Nomor WhatsApp wajib diisi untuk konfirmasi pengajuan.",
+        }));
+      } else if (
+        errors.whatsapp === "Nomor WhatsApp wajib diisi untuk konfirmasi pengajuan." ||
+        errors.whatsapp === "Nomor WhatsApp hanya boleh berisi angka ya."
+      ) {
+        const check = validatePhone(clean, true);
+        if (check.isValid) {
+          setErrors((prev) => ({ ...prev, whatsapp: "" }));
+        } else if (clean.length < 10) {
+          setErrors((prev) => ({ ...prev, whatsapp: "" }));
+        } else {
+          setErrors((prev) => ({ ...prev, whatsapp: check.message }));
+        }
+      } else {
+        const check = validatePhone(clean, true);
+        if (check.isValid) {
+          setErrors((prev) => ({ ...prev, whatsapp: "" }));
+        }
       }
     }
   }
 
   function handleWhatsappBlur() {
-    const check = validatePhone(whatsapp);
+    const check = validatePhone(whatsapp, true);
     if (!check.isValid) {
       setErrors((prev) => ({ ...prev, whatsapp: check.message }));
+    } else {
+      setErrors((prev) => ({ ...prev, whatsapp: "" }));
     }
   }
 
@@ -122,10 +144,15 @@ export function useCheckoutInputHandlers({
     }
 
     const check = validasiTanggalTerpisah(nextStart, endDate);
-    if (check.valid) {
+    if (check.isValid) {
       setErrors((prev) => ({ ...prev, startDate: "", endDate: "" }));
-    } else if (check.field === "startDate") {
-      setErrors((prev) => ({ ...prev, startDate: check.message }));
+    } else {
+      if (check.startError) {
+        setErrors((prev) => ({ ...prev, startDate: check.startError }));
+      }
+      if (check.endError) {
+        setErrors((prev) => ({ ...prev, endDate: check.endError }));
+      }
     }
   }
 
@@ -138,10 +165,15 @@ export function useCheckoutInputHandlers({
     }
 
     const check = validasiTanggalTerpisah(startDate, nextEnd);
-    if (check.valid) {
+    if (check.isValid) {
       setErrors((prev) => ({ ...prev, startDate: "", endDate: "" }));
-    } else if (check.field === "endDate") {
-      setErrors((prev) => ({ ...prev, endDate: check.message }));
+    } else {
+      if (check.startError) {
+        setErrors((prev) => ({ ...prev, startDate: check.startError }));
+      }
+      if (check.endError) {
+        setErrors((prev) => ({ ...prev, endDate: check.endError }));
+      }
     }
   }
 

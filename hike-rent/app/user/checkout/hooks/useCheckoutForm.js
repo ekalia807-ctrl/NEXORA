@@ -86,48 +86,62 @@ export function useCheckoutForm() {
   });
 
   async function handleSubmit(e) {
+    console.log("=== [CheckoutForm] handleSubmit dipanggil ===", {
+      name,
+      whatsapp,
+      startDate,
+      endDate,
+      hasKtp: Boolean(ktp),
+    });
     e.preventDefault();
 
     setLoading(true);
-    const result = await validateAndSubmitOrder({
-      name,
-      whatsapp,
-      ktp,
-      ktpPreview,
-      startDate,
-      endDate,
-      todayStr,
-      diffDays,
-      totalPaketHarga,
-      namaAlatGabungan,
-      paketItems,
-    });
+    try {
+      const result = await validateAndSubmitOrder({
+        name,
+        whatsapp,
+        ktp,
+        ktpPreview,
+        startDate,
+        endDate,
+        todayStr,
+        diffDays,
+        totalPaketHarga,
+        namaAlatGabungan,
+        paketItems,
+      });
 
-    if (!result.success) {
-      setErrors(result.errors);
-      setLoading(false);
+      if (!result.success) {
+        console.warn("=== [CheckoutForm] Validasi pengajuan gagal ===", result.errors);
+        setErrors(result.errors);
+        setLoading(false);
 
-      if (result.errors.startDate && startDateInputRef.current) {
-        startDateInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-        startDateInputRef.current.focus();
-      } else if (result.errors.endDate && endDateInputRef.current) {
-        endDateInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-        endDateInputRef.current.focus();
-      } else if (result.errors.name && nameInputRef.current) {
-        nameInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-        nameInputRef.current.focus();
-      } else if (result.errors.whatsapp && whatsappInputRef.current) {
-        whatsappInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-        whatsappInputRef.current.focus();
-      } else if (result.errors.ktp && ktpInputRef.current) {
-        ktpInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (result.errors.startDate && startDateInputRef.current) {
+          startDateInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          startDateInputRef.current.focus();
+        } else if (result.errors.endDate && endDateInputRef.current) {
+          endDateInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          endDateInputRef.current.focus();
+        } else if (result.errors.name && nameInputRef.current) {
+          nameInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          nameInputRef.current.focus();
+        } else if (result.errors.whatsapp && whatsappInputRef.current) {
+          whatsappInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          whatsappInputRef.current.focus();
+        } else if (result.errors.ktp && ktpInputRef.current) {
+          ktpInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        return;
       }
 
-      return;
+      console.log("=== [CheckoutForm] Pengajuan berhasil diproses! ===");
+      setSubmitted(true);
+    } catch (err) {
+      console.error("=== [CheckoutForm] Error tak terduga saat submit ===", err);
+    } finally {
+      setLoading(false);
     }
-
-    setSubmitted(true);
-    setLoading(false);
   }
 
   return {

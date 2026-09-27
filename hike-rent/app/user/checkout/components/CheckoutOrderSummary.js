@@ -73,6 +73,7 @@ export default function CheckoutOrderSummary({
 
         {/* Tombol Ajukan Sewa */}
         <button
+          id="btn-ajukan-sewa"
           type="submit"
           disabled={loading}
           className="w-full rounded-xl bg-ridge py-3.5 text-center text-xs font-bold text-fog shadow-sm transition-all hover:bg-ink disabled:opacity-50 active:scale-[0.99]"

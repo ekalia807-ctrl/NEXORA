@@ -72,9 +72,14 @@ export function validasiTanggalTerpisah(tanggalMulai, tanggalSelesai) {
     endError = "Tanggal kembali tidak boleh lebih awal dari tanggal ambil.";
   }
 
+  const isValid = !startError && !endError;
+
   return {
     startError,
     endError,
-    isValid: !startError && !endError,
+    isValid,
+    valid: isValid,
+    field: startError ? "startDate" : endError ? "endDate" : null,
+    message: startError || endError || "",
   };
 }

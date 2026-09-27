@@ -2,8 +2,6 @@
 
 import { statusStyle } from "@/constants/rentalStatus";
 import { formatRupiah } from "@/lib/utils/hitungBiaya";
-import RentalCardActions from "./RentalCardActions";
-import RentalCardAuditTrail from "./RentalCardAuditTrail";
 
 export default function RentalApprovalCard({
   req,
@@ -15,7 +13,7 @@ export default function RentalApprovalCard({
 }) {
   const cleanWa = (req.whatsapp || "").replace(/^0/, "62").replace(/\D/g, "");
   const waMessage = encodeURIComponent(
-    `Halo ${req.name}, terkait transaksi sewa NEXORA ${req.id} (${req.item}), status saat ini adalah: "${req.status}".`
+    `Halo ${req.name}, terkait transaksi sewa HIKERENT ${req.id} (${req.item}), status saat ini adalah: "${req.status}".`
   );
   const waUrl = `https://wa.me/${cleanWa || "6281234567890"}?text=${waMessage}`;
 
@@ -69,7 +67,7 @@ export default function RentalApprovalCard({
 
         <div className="flex flex-col items-end gap-2">
           <span
-            className={`rounded-full px-3.5 py-1 text-xs font-semibold shadow-sm ${statusStyle[req.status] || "bg-amber text-ink"
+            className={`rounded-full px-3.5 py-1 text-xs font-semibold shadow-sm ${statusStyle[req.status] || "bg-amber-100 text-amber-700"
               }`}
           >
             ● {req.status}
@@ -79,14 +77,14 @@ export default function RentalApprovalCard({
           {req.payment_status && (
             <span
               className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border ${req.payment_status === "terverifikasi"
-                ? "bg-emerald-100 border-emerald-200 text-emerald-700"
-                : req.payment_status === "menunggu_verifikasi"
-                  ? "bg-amber-100 border-amber-200 text-amber-700"
-                  : req.payment_status === "menunggu_pembayaran"
-                    ? "bg-orange-100 border-orange-200 text-orange-700"
-                    : req.payment_status === "belum_tersedia"
-                      ? "bg-slate-100 border-slate-200 text-slate-500"
-                      : "bg-paper border-line text-ink/60"
+                  ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                  : req.payment_status === "menunggu_verifikasi"
+                    ? "bg-amber-100 border-amber-200 text-amber-700"
+                    : req.payment_status === "menunggu_pembayaran"
+                      ? "bg-orange-100 border-orange-200 text-orange-700"
+                      : req.payment_status === "belum_tersedia"
+                        ? "bg-slate-100 border-slate-200 text-slate-500"
+                        : "bg-paper border-line text-ink/60"
                 }`}
             >
               {req.payment_status === "terverifikasi" && "✓ Bayar Terverifikasi"}
@@ -144,7 +142,7 @@ export default function RentalApprovalCard({
 
       {/* Bukti Bayar Preview & Lightbox Trigger */}
       {req.payment_proof && (
-        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber/30 bg-amber/10 p-3.5">
+        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
           <div className="flex items-center gap-3">
             <img
               src={req.payment_proof}
@@ -173,15 +171,15 @@ export default function RentalApprovalCard({
 
       {/* Warning Banner Jika Belum Ada Bukti Pembayaran */}
       {isApproved && !hasPaymentProof && (
-        <div className="mt-3.5 flex items-start gap-3 rounded-xl border border-amber/50 bg-amber/15 p-3.5 text-xs text-amber-950">
+        <div className="mt-3.5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-800">
           <span className="text-lg leading-none mt-0.5">⚠️</span>
           <div>
-            <strong className="block font-semibold text-amber-950">
+            <strong className="block font-semibold text-amber-800">
               Peminjam Belum Konfirmasi Pembayaran
             </strong>
-            <p className="mt-0.5 text-[11px] text-amber-850/90 leading-relaxed">
+            <p className="mt-0.5 text-[11px] text-amber-700/90 leading-relaxed">
               Peminjam belum mengunggah bukti transfer atau struk pembayaran. Tombol penyerahan alat (
-              <strong className="font-mono text-amber-950">&quot;Diambil&quot;</strong>) dikunci untuk
+              <strong className="font-mono text-amber-800">&quot;Diambil&quot;</strong>) dikunci untuk
               mencegah penyerahan barang sebelum pembayaran diselesaikan.
             </p>
           </div>
@@ -202,23 +200,6 @@ export default function RentalApprovalCard({
       )}
 
       {/* Status Action Buttons */}
-<<<<<<<<< Temporary merge branch 1
-      <RentalCardActions
-        req={req}
-        isLoading={isLoading}
-        isPending={isPending}
-        isApproved={isApproved}
-        isBorrowed={isBorrowed}
-        isFinished={isFinished}
-        isRejected={isRejected}
-        hasPaymentProof={hasPaymentProof}
-        waUrl={waUrl}
-        onStatusTransition={onStatusTransition}
-      />
-
-      {/* Linimasa Audit Trail Status History Logs */}
-      <RentalCardAuditTrail statusLogs={req.status_logs} />
-=========
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line/60 pt-4">
         <div className="flex flex-wrap items-center gap-2">
           {/* Tahap 1: Approval */}
@@ -228,7 +209,7 @@ export default function RentalApprovalCard({
                 type="button"
                 disabled={isLoading}
                 onClick={() => onStatusTransition(req, "Disetujui")}
-                className="rounded-xl bg-ridge px-4 py-2 text-xs font-semibold text-fog shadow-sm hover:bg-ink transition-all disabled:opacity-50"
+                className="rounded-xl bg-sky-100 px-4 py-2 text-xs font-semibold text-sky-700 border border-sky-200 shadow-sm hover:bg-sky-200 transition-all disabled:opacity-50"
               >
                 ✓ Setujui Pengajuan
               </button>
@@ -236,7 +217,7 @@ export default function RentalApprovalCard({
                 type="button"
                 disabled={isLoading}
                 onClick={() => onStatusTransition(req, "Ditolak")}
-                className="rounded-xl border border-line bg-paper/60 px-3.5 py-2 text-xs font-semibold text-alert hover:border-alert/40 hover:bg-alert/10 transition-all disabled:opacity-50"
+                className="rounded-xl bg-rose-100 px-3.5 py-2 text-xs font-semibold text-rose-700 border border-rose-200 hover:bg-rose-200 transition-all disabled:opacity-50"
               >
                 ✕ Tolak
               </button>
@@ -257,7 +238,7 @@ export default function RentalApprovalCard({
                       "Pembayaran terverifikasi oleh Admin. Alat diserahkan kepada peminjam."
                     )
                   }
-                  className="rounded-xl bg-ridge px-4 py-2 text-xs font-semibold text-fog shadow-sm hover:bg-ink transition-all disabled:opacity-50"
+                  className="rounded-xl bg-violet-100 px-4 py-2 text-xs font-semibold text-violet-700 border border-violet-200 shadow-sm hover:bg-violet-200 transition-all disabled:opacity-50"
                 >
                   📦 Konfirmasi Bayar & Serahkan Alat (Diambil)
                 </button>
@@ -270,7 +251,7 @@ export default function RentalApprovalCard({
                         "⚠️ PERINGATAN: Peminjam belum mengonfirmasi pembayaran atau mengunggah bukti transfer!\n\nAdmin tidak dapat menyerahkan alat atau mengubah status ke 'Diambil' sebelum peminjam mengunggah foto bukti bayar."
                       );
                     }}
-                    className="cursor-pointer rounded-xl bg-amber/15 border border-amber/40 px-4 py-2 text-xs font-semibold text-amber-950 shadow-xs hover:bg-amber/25 transition-all flex items-center gap-1.5"
+                    className="cursor-pointer rounded-xl bg-amber-100 border border-amber-200 px-4 py-2 text-xs font-semibold text-amber-800 shadow-xs hover:bg-amber-200 transition-all flex items-center gap-1.5"
                     title="Klik untuk melihat status terkunci"
                   >
                     <span>🔒</span>
@@ -292,7 +273,7 @@ export default function RentalApprovalCard({
                 onClick={() =>
                   onStatusTransition(req, "Dibatalkan", "Pengajuan dibatalkan oleh Admin.")
                 }
-                className="rounded-xl border border-line bg-paper/60 px-3.5 py-2 text-xs font-semibold text-alert hover:border-alert/40 hover:bg-alert/10 transition-all disabled:opacity-50"
+                className="rounded-xl bg-rose-100 px-3.5 py-2 text-xs font-semibold text-rose-700 border border-rose-200 hover:bg-rose-200 transition-all disabled:opacity-50"
               >
                 Batalkan
               </button>
@@ -370,7 +351,6 @@ export default function RentalApprovalCard({
           </div>
         </div>
       )}
->>>>>>>>> Temporary merge branch 2
     </div>
   );
 }

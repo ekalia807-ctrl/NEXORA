@@ -23,20 +23,29 @@ export async function validateAndSubmitOrder({
   paketItems,
 }) {
   const nameCheck = validateName(name);
-  const phoneCheck = validatePhone(whatsapp);
+  const phoneCheck = validatePhone(whatsapp, true);
   const ktpCheck = validateKtp(ktp);
   const dateCheck = validasiTanggalTerpisah(startDate, endDate);
 
+  console.log("=== [checkoutSubmission] Validasi data pengajuan ===", {
+    name,
+    whatsapp,
+    startDate,
+    endDate,
+    hasKtp: Boolean(ktp),
+    nameCheck,
+    phoneCheck,
+    ktpCheck,
+    dateCheck,
+  });
+
   const newErrors = {};
 
-  if (startDate < todayStr) {
-    newErrors.startDate = "Tanggal pengajuan tidak boleh kurang dari hari ini.";
-  } else if (!dateCheck.valid) {
-    if (dateCheck.field === "startDate") {
-      newErrors.startDate = dateCheck.message;
-    } else {
-      newErrors.endDate = dateCheck.message;
-    }
+  if (dateCheck.startError) {
+    newErrors.startDate = dateCheck.startError;
+  }
+  if (dateCheck.endError) {
+    newErrors.endDate = dateCheck.endError;
   }
 
   if (!nameCheck.isValid) {
@@ -52,6 +61,7 @@ export async function validateAndSubmitOrder({
   }
 
   if (Object.keys(newErrors).length > 0) {
+    console.warn("=== [checkoutSubmission] Validasi gagal dengan error ===", newErrors);
     return { success: false, errors: newErrors };
   }
 
@@ -102,6 +112,11 @@ export async function validateAndSubmitOrder({
     ktp_uploaded: true,
     ktp_file_name: ktp?.name || "ktp.jpg",
     ktp_preview: ktpPreview || "",
+  });
+
+  console.log("=== [checkoutSubmission] Pengajuan berhasil disimpan ===", {
+    orderCode: backendResult?.order_code || orderCode,
+    backendId: backendResult?.id,
   });
 
   return { success: true };
