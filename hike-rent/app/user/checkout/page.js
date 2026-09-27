@@ -148,6 +148,7 @@ function CheckoutForm() {
               errors={errors}
               onChange={handlers.handleKtpChange}
               onRemove={handlers.handleRemoveKtp}
+              onUseSampleKtp={handlers.handleUseSampleKtp}
             />
           </div>
         </div>

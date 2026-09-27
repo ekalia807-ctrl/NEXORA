@@ -29,14 +29,11 @@ export async function validateAndSubmitOrder({
 
   const newErrors = {};
 
-  if (startDate < todayStr) {
-    newErrors.startDate = "Tanggal pengajuan tidak boleh kurang dari hari ini.";
-  } else if (!dateCheck.valid) {
-    if (dateCheck.field === "startDate") {
-      newErrors.startDate = dateCheck.message;
-    } else {
-      newErrors.endDate = dateCheck.message;
-    }
+  if (dateCheck.startError) {
+    newErrors.startDate = dateCheck.startError;
+  }
+  if (dateCheck.endError) {
+    newErrors.endDate = dateCheck.endError;
   }
 
   if (!nameCheck.isValid) {
@@ -47,7 +44,9 @@ export async function validateAndSubmitOrder({
     newErrors.whatsapp = phoneCheck.message;
   }
 
-  if (!ktpCheck.isValid) {
+  if (!ktp && !ktpPreview) {
+    newErrors.ktp = "Silakan unggah foto KTP terlebih dahulu ya, untuk verifikasi peminjaman.";
+  } else if (ktp && !ktpCheck.isValid) {
     newErrors.ktp = ktpCheck.message;
   }
 

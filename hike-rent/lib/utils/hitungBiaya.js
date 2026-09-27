@@ -52,7 +52,6 @@ export function validasiTanggal(tanggalMulai, tanggalSelesai) {
   return null;
 }
 
-// Mengembalikan error per field (startError, endError) untuk ditampilkan langsung di dekat input
 export function validasiTanggalTerpisah(tanggalMulai, tanggalSelesai) {
   const todayStr = getTodayString();
   let startError = "";
@@ -72,9 +71,15 @@ export function validasiTanggalTerpisah(tanggalMulai, tanggalSelesai) {
     endError = "Tanggal kembali tidak boleh lebih awal dari tanggal ambil.";
   }
 
+  const isValid = !startError && !endError;
+
   return {
     startError,
     endError,
-    isValid: !startError && !endError,
+    isValid,
+    valid: isValid,
+    field: startError ? "startDate" : endError ? "endDate" : null,
+    message: startError || endError || "",
   };
 }
+
