@@ -202,6 +202,23 @@ export default function RentalApprovalCard({
       )}
 
       {/* Status Action Buttons */}
+<<<<<<<<< Temporary merge branch 1
+      <RentalCardActions
+        req={req}
+        isLoading={isLoading}
+        isPending={isPending}
+        isApproved={isApproved}
+        isBorrowed={isBorrowed}
+        isFinished={isFinished}
+        isRejected={isRejected}
+        hasPaymentProof={hasPaymentProof}
+        waUrl={waUrl}
+        onStatusTransition={onStatusTransition}
+      />
+
+      {/* Linimasa Audit Trail Status History Logs */}
+      <RentalCardAuditTrail statusLogs={req.status_logs} />
+=========
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line/60 pt-4">
         <div className="flex flex-wrap items-center gap-2">
           {/* Tahap 1: Approval */}
@@ -294,7 +311,7 @@ export default function RentalApprovalCard({
                   "Peralatan telah dikembalikan ke basecamp dalam kondisi baik. Peminjaman selesai."
                 )
               }
-              className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-fog shadow-sm hover:bg-[#3d593c] transition-all disabled:opacity-50"
+              className="rounded-xl bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-700 border border-emerald-200 shadow-sm hover:bg-emerald-200 transition-all disabled:opacity-50"
             >
               ✓ Alat Dikembalikan (Selesaikan Transaksi)
             </button>
@@ -302,14 +319,14 @@ export default function RentalApprovalCard({
 
           {/* Transaksi Selesai */}
           {isFinished && (
-            <span className="rounded-xl bg-paper px-3 py-1.5 font-mono text-xs text-ink/60 border border-line">
+            <span className="rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
               ✓ Transaksi Selesai & Ditutup
             </span>
           )}
 
           {/* Transaksi Ditolak */}
           {isRejected && (
-            <span className="rounded-xl bg-alert/10 px-3 py-1.5 font-mono text-xs text-alert border border-alert/20">
+            <span className="rounded-xl bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 border border-rose-200">
               ✕ Pengajuan Ditolak / Dibatalkan
             </span>
           )}
@@ -353,6 +370,7 @@ export default function RentalApprovalCard({
           </div>
         </div>
       )}
+>>>>>>>>> Temporary merge branch 2
     </div>
   );
 }
