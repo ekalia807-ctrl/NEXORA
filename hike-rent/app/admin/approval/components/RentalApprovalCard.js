@@ -67,9 +67,8 @@ export default function RentalApprovalCard({
 
         <div className="flex flex-col items-end gap-2">
           <span
-            className={`rounded-full px-3.5 py-1 text-xs font-semibold shadow-sm ${
-              statusStyle[req.status] || "bg-amber text-ink"
-            }`}
+            className={`rounded-full px-3.5 py-1 text-xs font-semibold shadow-sm ${statusStyle[req.status] || "bg-amber text-ink"
+              }`}
           >
             ● {req.status}
           </span>
@@ -77,13 +76,16 @@ export default function RentalApprovalCard({
           {/* Badge Status Pembayaran */}
           {req.payment_status && (
             <span
-              className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border ${
-                req.payment_status === "terverifikasi"
-                  ? "bg-moss/10 border-moss/30 text-moss"
-                  : req.payment_status === "menunggu_verifikasi"
-                  ? "bg-amber/20 border-amber/40 text-ink font-semibold"
-                  : "bg-paper border-line text-ink/60"
-              }`}
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border ${req.payment_status === "terverifikasi"
+                ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                : req.payment_status === "menunggu_verifikasi"
+                  ? "bg-amber-100 border-amber-200 text-amber-700"
+                  : req.payment_status === "menunggu_pembayaran"
+                    ? "bg-orange-100 border-orange-200 text-orange-700"
+                    : req.payment_status === "belum_tersedia"
+                      ? "bg-slate-100 border-slate-200 text-slate-500"
+                      : "bg-paper border-line text-ink/60"
+                }`}
             >
               {req.payment_status === "terverifikasi" && "✓ Bayar Terverifikasi"}
               {req.payment_status === "menunggu_verifikasi" && "💳 Bukti Bayar Diunggah (Perlu Dicek)"}
@@ -290,7 +292,7 @@ export default function RentalApprovalCard({
                   "Peralatan telah dikembalikan ke basecamp dalam kondisi baik. Peminjaman selesai."
                 )
               }
-              className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-fog shadow-sm hover:bg-[#3d593c] transition-all disabled:opacity-50"
+              className="rounded-xl bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-700 border border-emerald-200 shadow-sm hover:bg-emerald-200 transition-all disabled:opacity-50"
             >
               ✓ Alat Dikembalikan (Selesaikan Transaksi)
             </button>
@@ -298,14 +300,14 @@ export default function RentalApprovalCard({
 
           {/* Transaksi Selesai */}
           {isFinished && (
-            <span className="rounded-xl bg-paper px-3 py-1.5 font-mono text-xs text-ink/60 border border-line">
+            <span className="rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
               ✓ Transaksi Selesai & Ditutup
             </span>
           )}
 
           {/* Transaksi Ditolak */}
           {isRejected && (
-            <span className="rounded-xl bg-alert/10 px-3 py-1.5 font-mono text-xs text-alert border border-alert/20">
+            <span className="rounded-xl bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 border border-rose-200">
               ✕ Pengajuan Ditolak / Dibatalkan
             </span>
           )}
@@ -339,9 +341,9 @@ export default function RentalApprovalCard({
                 <span className="font-mono text-[10px] text-ink/40 shrink-0">
                   {log.created_at
                     ? new Date(log.created_at).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                     : "-"}
                 </span>
               </div>
