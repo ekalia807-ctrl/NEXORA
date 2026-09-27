@@ -30,17 +30,17 @@ export const RENTAL_STATUS_LABEL = {
  * Badge styling warna status terpusat (Tailwind CSS)
  */
 export const RENTAL_STATUS_STYLE = {
-  [RENTAL_STATUS.PENDING]: "bg-amber text-ink",
-  [RENTAL_STATUS.ACTIVE]: "bg-moss text-fog",
-  [RENTAL_STATUS.COMPLETED]: "bg-line text-ink/70",
-  [RENTAL_STATUS.REJECTED]: "bg-alert text-fog",
+  [RENTAL_STATUS.PENDING]: "bg-amber-100 text-amber-700",
+  [RENTAL_STATUS.ACTIVE]: "bg-sky-100 text-sky-700",
+  [RENTAL_STATUS.COMPLETED]: "bg-emerald-100 text-emerald-700",
+  [RENTAL_STATUS.REJECTED]: "bg-rose-100 text-rose-700",
   // Alias tampilan human-readable
-  "Menunggu verifikasi": "bg-amber text-ink",
-  Disetujui: "bg-moss text-fog",
-  Aktif: "bg-moss text-fog",
-  Diambil: "bg-ridge text-amber",
-  Selesai: "bg-line text-ink/70",
-  Ditolak: "bg-alert text-fog",
+  "Menunggu verifikasi": "bg-amber-100 text-amber-700",
+  Disetujui: "bg-sky-100 text-sky-700",
+  Aktif: "bg-sky-100 text-sky-700",
+  Diambil: "bg-violet-100 text-violet-700",
+  Selesai: "bg-emerald-100 text-emerald-700",
+  Ditolak: "bg-rose-100 text-rose-700",
 };
 
 // Alias backward compatibility

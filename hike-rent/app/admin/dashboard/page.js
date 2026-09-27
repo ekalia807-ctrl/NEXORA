@@ -107,14 +107,6 @@ export default function AdminDashboardPage() {
     },
   ];
 
-  const quickLinks = [
-    { href: "/admin/katalog", label: "Kelola Katalog" },
-    { href: "/admin/packages", label: "Kelola Paket Bundling" },
-    { href: "/admin/approval", label: "Approval Pengajuan" },
-    { href: "/admin/accounts", label: "Akun Pengguna" },
-    { href: "/admin/pendapatan", label: "Rekap Penghasilan" },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Header Standar Admin */}
@@ -172,7 +164,7 @@ export default function AdminDashboardPage() {
         })}
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-6">
         {/* Aktivitas terbaru */}
         <section className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
           <div className="flex items-center justify-between border-b border-line/60 pb-3">
@@ -226,29 +218,6 @@ export default function AdminDashboardPage() {
           </Link>
         </section>
 
-        {/* Akses cepat */}
-        <section className="rounded-2xl border border-line bg-white/70 p-5 sm:p-6 shadow-sm backdrop-blur-md">
-          <div className="border-b border-line/60 pb-3">
-            <h2 className="font-display text-base font-bold text-ink">
-              Akses Navigasi Cepat
-            </h2>
-            <p className="mt-0.5 text-xs text-ink/55">Pintasan modul administratif</p>
-          </div>
-          <div className="mt-3 flex flex-col gap-1">
-            {quickLinks.map((q) => (
-              <Link
-                key={q.href}
-                href={q.href}
-                className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-ink/80 transition-colors hover:bg-white hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ridge"
-              >
-                <span>{q.label}</span>
-                <span aria-hidden="true" className="text-ink/40 font-mono">
-                  →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
       </div>
     </div>
   );

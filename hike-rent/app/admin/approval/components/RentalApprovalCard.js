@@ -69,9 +69,8 @@ export default function RentalApprovalCard({
 
         <div className="flex flex-col items-end gap-2">
           <span
-            className={`rounded-full px-3.5 py-1 text-xs font-semibold shadow-sm ${
-              statusStyle[req.status] || "bg-amber text-ink"
-            }`}
+            className={`rounded-full px-3.5 py-1 text-xs font-semibold shadow-sm ${statusStyle[req.status] || "bg-amber text-ink"
+              }`}
           >
             ● {req.status}
           </span>
@@ -79,13 +78,16 @@ export default function RentalApprovalCard({
           {/* Badge Status Pembayaran */}
           {req.payment_status && (
             <span
-              className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border ${
-                req.payment_status === "terverifikasi"
-                  ? "bg-moss/10 border-moss/30 text-moss"
-                  : req.payment_status === "menunggu_verifikasi"
-                  ? "bg-amber/20 border-amber/40 text-ink font-semibold"
-                  : "bg-paper border-line text-ink/60"
-              }`}
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border ${req.payment_status === "terverifikasi"
+                ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                : req.payment_status === "menunggu_verifikasi"
+                  ? "bg-amber-100 border-amber-200 text-amber-700"
+                  : req.payment_status === "menunggu_pembayaran"
+                    ? "bg-orange-100 border-orange-200 text-orange-700"
+                    : req.payment_status === "belum_tersedia"
+                      ? "bg-slate-100 border-slate-200 text-slate-500"
+                      : "bg-paper border-line text-ink/60"
+                }`}
             >
               {req.payment_status === "terverifikasi" && "✓ Bayar Terverifikasi"}
               {req.payment_status === "menunggu_verifikasi" && "💳 Bukti Bayar Diunggah (Perlu Dicek)"}
