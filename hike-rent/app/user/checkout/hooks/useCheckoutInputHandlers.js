@@ -95,6 +95,8 @@ export function useCheckoutInputHandlers({
     const check = validatePhone(whatsapp);
     if (!check.isValid) {
       setErrors((prev) => ({ ...prev, whatsapp: check.message }));
+    } else {
+      setErrors((prev) => ({ ...prev, whatsapp: "" }));
     }
   }
 

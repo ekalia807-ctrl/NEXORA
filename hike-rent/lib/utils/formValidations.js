@@ -35,13 +35,14 @@ export function validateName(val) {
   return { isValid: true, clean };
 }
 
-// Nomor WhatsApp boleh kosong saat mengisi form, tetapi jika diisi harus berformat Indonesia valid.
+// Nomor WhatsApp wajib diisi dan harus berformat Indonesia valid.
 export function validatePhone(phone) {
   const clean = (phone || "").trim();
 
   if (!clean) {
     return {
-      isValid: true,
+      isValid: false,
+      message: "Lengkapi nomor WhatsApp terlebih dahulu ya.",
       clean: "",
       isEmpty: true,
     };

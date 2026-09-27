@@ -113,12 +113,12 @@ export default function CustomerInfoFields({
       <div>
         <label htmlFor="checkout-whatsapp" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
           Nomor WhatsApp Aktif
-          <span className="ml-1 font-normal normal-case text-ink/40">(opsional)</span>
         </label>
         <input
           ref={whatsappInputRef}
           id="checkout-whatsapp"
           type="tel"
+          required
           inputMode="numeric"
           pattern="[0-9]*"
           autoComplete="tel"
