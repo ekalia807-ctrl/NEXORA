@@ -1,19 +1,9 @@
 import { cookies } from "next/headers";
 
-export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://hmif.if.unram.ac.id/api/v3";
+export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://hmif.if.unram.ac.id/api/v3";
 export const PROJECT = process.env.NEXT_PUBLIC_PROJECT_ID || "hikerent";
-export const API_KEY =
-  process.env.NEXT_PUBLIC_API_KEY || "pk_hikerent_da4b2b680ab481f4";
+export const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "pk_hikerent_da4b2b680ab481f4";
 
-/**
- * Klien HTTP terpusat untuk HMIF UNRAM API Gateway v2
- * Mengotomasi Layer 1 (X-API-Key) dan Layer 2 (Authorization Bearer JWT)
- *
- * @param {string} endpoint - Path endpoint relatif (misal: "/packages")
- * @param {object} options - Opsi fetch (method, body, token, cache, headers)
- * @returns {Promise<any>} Data JSON hasil respons
- */
 export async function apiFetch(endpoint, options = {}) {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const url = `${BASE_URL}/${PROJECT}${cleanEndpoint}`;

@@ -1,0 +1,23 @@
+# Dependencies & build
+node_modules/
+.next/
+build/
+dist/
+
+# Catatan Pembelajaran Lokal (Private Learning Notes)
+learn/
+/learn/
+**/learn/**
+
+# Laporan HTML Lokal
+LAPORAN_*.html
+
+# Environment variables
+.env*
+!.env.example
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

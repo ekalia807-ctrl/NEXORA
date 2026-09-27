@@ -175,6 +175,49 @@ export function useCheckoutInputHandlers({
     }
   }
 
+  function handleUseSampleKtp() {
+    if (typeof document === "undefined") return;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 400;
+      canvas.height = 240;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#f1f5f9";
+        ctx.fillRect(0, 0, 400, 240);
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(0, 0, 400, 42);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillText("REPUBLIK INDONESIA - KTP CONTOH DEMO", 18, 26);
+        ctx.fillStyle = "#334155";
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillText("NIK: 5201012304950001", 20, 75);
+        ctx.font = "12px sans-serif";
+        ctx.fillText(`Nama: ${name || "User Demo"}`, 20, 105);
+        ctx.fillText("Alamat: Mataram, NTB", 20, 135);
+        ctx.fillText("Status: Identitas Peminjam Terverifikasi", 20, 165);
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillRect(280, 60, 95, 125);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText("PAS FOTO", 298, 125);
+      }
+      const dataUrl = canvas.toDataURL("image/png");
+      setKtpPreview(dataUrl);
+      setErrors((prev) => ({ ...prev, ktp: "" }));
+      fetch(dataUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const file = new File([blob], "ktp_sample_demo.png", { type: "image/png" });
+          setKtp(file);
+        })
+        .catch(() => {});
+    } catch (err) {
+      console.warn("Gagal membuat sampel KTP:", err);
+    }
+  }
+
   return {
     handleNameChange,
     handleWhatsappKeyDown,
@@ -185,5 +228,6 @@ export function useCheckoutInputHandlers({
     handleEndDateChange,
     handleKtpChange,
     handleRemoveKtp,
+    handleUseSampleKtp,
   };
 }

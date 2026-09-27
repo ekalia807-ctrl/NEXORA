@@ -6,15 +6,27 @@ export default function KtpUploader({
   errors,
   onChange,
   onRemove,
+  onUseSampleKtp,
 }) {
   return (
     <div className="border-t border-line/50 pt-4">
-      <label
-        htmlFor="checkout-ktp"
-        className="block text-xs font-semibold uppercase tracking-wide text-ink/70"
-      >
-        2. Unggah Foto KTP / Kartu Identitas
-      </label>
+      <div className="flex items-center justify-between">
+        <label
+          htmlFor="checkout-ktp"
+          className="block text-xs font-semibold uppercase tracking-wide text-ink/70"
+        >
+          2. Unggah Foto KTP / Kartu Identitas
+        </label>
+        {onUseSampleKtp && !ktpPreview && (
+          <button
+            type="button"
+            onClick={onUseSampleKtp}
+            className="rounded-lg border border-line bg-paper px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-white hover:text-amber transition-colors shadow-2xs"
+          >
+            📎 Gunakan KTP Sampel (Demo)
+          </button>
+        )}
+      </div>
 
       <div
         className={`mt-2 rounded-xl border p-3 transition-all ${
