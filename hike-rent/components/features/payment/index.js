@@ -4,3 +4,5 @@ export { default as QrisView } from "./QrisView";
 export { default as BrivaView } from "./BrivaView";
 export { default as ProofUploader } from "./ProofUploader";
 export { default as PaymentSuccessView } from "./PaymentSuccessView";
+export { default as PaymentHeader } from "./PaymentHeader";
+export { default as PaymentMethodSection } from "./PaymentMethodSection";

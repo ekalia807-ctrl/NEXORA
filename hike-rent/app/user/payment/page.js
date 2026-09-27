@@ -10,11 +10,9 @@ import { formatRupiah } from "@/lib/utils/hitungBiaya";
 import { compressImage } from "@/lib/utils/imageCompressor";
 import {
   BillingSummary,
-  PaymentMethodTabs,
-  QrisView,
-  BrivaView,
-  ProofUploader,
   PaymentSuccessView,
+  PaymentHeader,
+  PaymentMethodSection,
 } from "@/components/features/payment";
 
 function PaymentContent() {
@@ -22,7 +20,6 @@ function PaymentContent() {
   const rentalIdParam = searchParams.get("rentalId") || "";
   const rentals = useRentalsSync();
 
-  // Cari rental yang dipilih atau fallback ke rental berstatus Disetujui/diverifikasi
   const approvedRentals = useMemo(
     () =>
       rentals.filter(
@@ -44,10 +41,7 @@ function PaymentContent() {
     return approvedRentals[0] || rentals[0] || null;
   }, [rentals, rentalIdParam, approvedRentals]);
 
-  // Method state: "qris" atau "briva"
   const [method, setMethod] = useState("qris");
-
-  // File upload state
   const [proofFile, setProofFile] = useState(null);
   const [uploadedPreview, setUploadedPreview] = useState(null);
   const proofPreview = uploadedPreview || selectedRental?.payment_proof || null;
@@ -58,7 +52,6 @@ function PaymentContent() {
   const submittedSuccess = submittedManually || Boolean(selectedRental?.payment_proof);
   const [copied, setCopied] = useState(false);
 
-  // Generate nomor VA dummy berdasarkan rental ID
   const brivaNumber = useMemo(() => {
     if (!selectedRental) return "12800812345678";
     const numPart = String(selectedRental.id).replace(/\D/g, "") || "9982";
@@ -139,7 +132,7 @@ function PaymentContent() {
       console.warn("Audit status log deferred:", err.message);
     }
 
-    // 3. Update catatan di tabel rentals backend dengan data JSON lengkap (bukti bayar, metode, tanggal)
+    // 3. Update catatan di tabel rentals backend dengan data JSON lengkap
     try {
       let baseOrderNote = selectedRental.notes || selectedRental.note || "";
       try {
@@ -196,41 +189,7 @@ function PaymentContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header Halaman Pembayaran */}
-      <div className="rounded-2xl border border-line bg-white/70 p-6 shadow-sm backdrop-blur-md">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-amber font-semibold">
-                Langkah Transaksi
-              </span>
-              <span className="h-1 w-1 rounded-full bg-ink/30" />
-              <span className="font-mono text-[11px] text-ink/50">Pembayaran Sewa</span>
-            </div>
-            <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
-              Pembayaran & Konfirmasi Sewa
-            </h1>
-            <p className="mt-1.5 text-sm text-ink/65">
-              Selesaikan pembayaran untuk pengajuan sewa yang telah disetujui admin sebelum mengambil alat di basecamp.
-            </p>
-          </div>
-
-          <Link
-            href="/user/riwayat"
-            className="rounded-xl border border-line bg-paper/60 px-4 py-2 text-xs font-semibold text-ink hover:bg-paper transition-all"
-          >
-            ← Kembali ke Riwayat
-          </Link>
-        </div>
-
-        {/* Disclaimer Demo */}
-        <div className="mt-4 rounded-xl border border-amber/30 bg-amber/10 p-3.5 text-xs text-ink/80 flex items-start gap-2.5">
-          <span className="text-base leading-none">ℹ️</span>
-          <p>
-            <strong>Simulasi Demo:</strong> Metode pembayaran di bawah ini (QRIS & BRIVA) adalah antarmuka simulasi visual untuk keperluan pengujian dan demonstrasi alur sistem NEXORA. Tidak ada pemotongan saldo atau dana riil yang diproses.
-          </p>
-        </div>
-      </div>
+      <PaymentHeader />
 
       {!selectedRental ? (
         <div className="rounded-2xl border border-dashed border-line bg-white/50 p-12 text-center shadow-sm">
@@ -262,46 +221,22 @@ function PaymentContent() {
 
           {/* Kolom Kanan: Pilihan Metode & Form Upload Bukti Bayar */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-2xl border border-line bg-white/80 p-6 shadow-sm backdrop-blur-sm">
-              <h2 className="font-display text-xl font-bold text-ink">
-                Pilih Metode Pembayaran
-              </h2>
-              <p className="mt-1 text-xs text-ink/60">
-                Pilih salah satu metode pembayaran simulasi di bawah ini untuk menyelesaikan transaksi.
-              </p>
-
-              {/* Selector Tabs: QRIS vs BRIVA */}
-              <div className="mt-5">
-                <PaymentMethodTabs method={method} onSelectMethod={setMethod} />
-              </div>
-
-              {/* Tampilan Visual QRIS */}
-              {method === "qris" && (
-                <QrisView totalAmount={selectedRental.total || selectedRental.total_price || 0} />
-              )}
-
-              {/* Tampilan Visual BRIVA */}
-              {method === "briva" && (
-                <BrivaView
-                  brivaNumber={brivaNumber}
-                  totalAmount={selectedRental.total || selectedRental.total_price || 0}
-                  copied={copied}
-                  onCopy={handleCopyVA}
-                />
-              )}
-
-              {/* Form Unggah Bukti Bayar */}
-              <ProofUploader
-                proofFile={proofFile}
-                proofPreview={proofPreview}
-                userNotes={userNotes}
-                submitting={submitting}
-                submittedSuccess={submittedSuccess}
-                onFileChange={handleFileChange}
-                onNotesChange={setUserNotes}
-                onSubmit={handleSubmitProof}
-              />
-            </div>
+            <PaymentMethodSection
+              method={method}
+              setMethod={setMethod}
+              selectedRental={selectedRental}
+              brivaNumber={brivaNumber}
+              copied={copied}
+              onCopyVA={handleCopyVA}
+              proofFile={proofFile}
+              proofPreview={proofPreview}
+              userNotes={userNotes}
+              submitting={submitting}
+              submittedSuccess={submittedSuccess}
+              onFileChange={handleFileChange}
+              setUserNotes={setUserNotes}
+              onSubmitProof={handleSubmitProof}
+            />
           </div>
         </div>
       )}

@@ -4,63 +4,8 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { registerAction } from "@/app/actions/auth";
-
-// 1. Fungsi validasi tunggal untuk form register
-function validateRegisterForm({ name, email, password, confirmPassword }) {
-  const errs = {};
-  const cleanName = name.trim();
-  const cleanEmail = email.trim();
-
-  if (!cleanName) {
-    errs.name = "Nama lengkap wajib diisi";
-  } else if (cleanName.length < 3) {
-    errs.name = "Nama minimal 3 karakter";
-  }
-
-  if (!cleanEmail) {
-    errs.email = "Email wajib diisi";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-    errs.email = "Format email tidak valid (contoh: nama@email.com)";
-  }
-
-  if (!password) {
-    errs.password = "Kata sandi wajib diisi";
-  } else if (password.length < 6) {
-    errs.password = "Kata sandi minimal 6 karakter";
-  }
-
-  if (!confirmPassword) {
-    errs.confirmPassword = "Konfirmasi kata sandi wajib diisi";
-  } else if (confirmPassword !== password) {
-    errs.confirmPassword = "Konfirmasi kata sandi tidak cocok";
-  }
-
-  return errs;
-}
-
-// 2. Helper icon mata (reusable)
-function EyeIcon({ open }) {
-  return open ? (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-    </svg>
-  ) : (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  );
-}
-
-// 3. Helper spinner loading
-function Spinner() {
-  return (
-    <svg className="h-4 w-4 animate-spin text-fog" viewBox="0 0 24 24" fill="none">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-    </svg>
-  );
-}
+import { validateRegisterForm, Spinner } from "./utils/registerValidation";
+import RegisterFields from "./components/RegisterFields";
 
 function RegisterForm() {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
@@ -111,7 +56,6 @@ function RegisterForm() {
       }
 
       if (res.autoLogin) {
-        // Sinkronkan peran ke localStorage
         const role = res.user?.role || "user";
         localStorage.setItem("role", role);
         if (res.user) {
@@ -168,118 +112,18 @@ function RegisterForm() {
         )}
 
         <form onSubmit={handleRegister} noValidate className="mt-6 space-y-4">
-          {/* Nama */}
-          <div>
-            <label htmlFor="reg-name" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
-              Nama Lengkap
-            </label>
-            <input
-              id="reg-name"
-              type="text"
-              autoFocus
-              disabled={loading}
-              value={form.name}
-              onChange={(e) => updateField("name", e.target.value)}
-              onBlur={() => handleBlur("name")}
-              placeholder="Contoh: Rian Anggara"
-              className={`mt-1.5 w-full rounded-xl border bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all ${
-                errors.name
-                  ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
-                  : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
-              } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
-            />
-            {errors.name && <p className="mt-1 text-xs text-alert font-medium">{errors.name}</p>}
-          </div>
+          <RegisterFields
+            form={form}
+            loading={loading}
+            errors={errors}
+            showPw={showPw}
+            setShowPw={setShowPw}
+            showConfirmPw={showConfirmPw}
+            setShowConfirmPw={setShowConfirmPw}
+            updateField={updateField}
+            handleBlur={handleBlur}
+          />
 
-          {/* Email */}
-          <div>
-            <label htmlFor="reg-email" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
-              Alamat Email
-            </label>
-            <input
-              id="reg-email"
-              type="email"
-              disabled={loading}
-              value={form.email}
-              onChange={(e) => updateField("email", e.target.value)}
-              onBlur={() => handleBlur("email")}
-              placeholder="nama@email.com"
-              className={`mt-1.5 w-full rounded-xl border bg-paper/60 px-4 py-2.5 text-sm text-ink outline-none transition-all ${
-                errors.email
-                  ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
-                  : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
-              } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
-            />
-            {errors.email && <p className="mt-1 text-xs text-alert font-medium">{errors.email}</p>}
-          </div>
-
-          {/* Kata Sandi */}
-          <div>
-            <label htmlFor="reg-password" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
-              Kata Sandi
-            </label>
-            <div className="relative mt-1.5">
-              <input
-                id="reg-password"
-                type={showPw ? "text" : "password"}
-                disabled={loading}
-                value={form.password}
-                onChange={(e) => updateField("password", e.target.value)}
-                onBlur={() => handleBlur("password")}
-                placeholder="Minimal 6 karakter"
-                className={`w-full rounded-xl border bg-paper/60 px-4 py-2.5 pr-10 text-sm text-ink outline-none transition-all ${
-                  errors.password
-                    ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
-                    : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
-                } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                disabled={loading}
-                aria-label={showPw ? "Sembunyikan sandi" : "Lihat sandi"}
-                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-ink/50 hover:text-ink focus:outline-none"
-              >
-                <EyeIcon open={showPw} />
-              </button>
-            </div>
-            {errors.password && <p className="mt-1 text-xs text-alert font-medium">{errors.password}</p>}
-          </div>
-
-          {/* Konfirmasi Kata Sandi */}
-          <div>
-            <label htmlFor="reg-confirm-password" className="block text-xs font-semibold uppercase tracking-wide text-ink/70">
-              Konfirmasi Kata Sandi
-            </label>
-            <div className="relative mt-1.5">
-              <input
-                id="reg-confirm-password"
-                type={showConfirmPw ? "text" : "password"}
-                disabled={loading}
-                value={form.confirmPassword}
-                onChange={(e) => updateField("confirmPassword", e.target.value)}
-                onBlur={() => handleBlur("confirmPassword")}
-                placeholder="Ulangi kata sandi"
-                className={`w-full rounded-xl border bg-paper/60 px-4 py-2.5 pr-10 text-sm text-ink outline-none transition-all ${
-                  errors.confirmPassword
-                    ? "border-alert focus:border-alert focus:ring-2 focus:ring-alert/10"
-                    : "border-line focus:border-ridge focus:bg-white focus:ring-2 focus:ring-ridge/10"
-                } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPw(!showConfirmPw)}
-                disabled={loading}
-                aria-label={showConfirmPw ? "Sembunyikan konfirmasi sandi" : "Lihat konfirmasi sandi"}
-                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-ink/50 hover:text-ink focus:outline-none"
-              >
-                <EyeIcon open={showConfirmPw} />
-              </button>
-            </div>
-            {errors.confirmPassword && <p className="mt-1 text-xs text-alert font-medium">{errors.confirmPassword}</p>}
-          </div>
-
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -308,7 +152,6 @@ function RegisterForm() {
     </section>
   );
 }
-
 
 export default function RegisterPage() {
   return (
