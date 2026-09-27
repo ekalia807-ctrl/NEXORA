@@ -22,7 +22,7 @@
 
 Dengan integrasi **Smart Recommendation** dan kalkulasi biaya otomatis, pengguna dapat merencanakan kebutuhan pendakian mereka dengan lebih cepat, aman, dan efisien. Komunikasi antara peminjam dan admin/pemberi pinjaman juga didukung langsung melalui integrasi WhatsApp Click-to-Chat.
 
-## 🌲 2. Pohon Direktori Lengkap Proyek (`hike-rent/`)
+## 🌲 Pohon Direktori Lengkap Proyek (`hike-rent/`)
 
 ```text
 hike-rent/
@@ -190,7 +190,7 @@ hike-rent/
 
 ---
 
-### B. Modul Checkout Peminjam (`app/user/checkout/`)
+### Modul Checkout Peminjam (`app/user/checkout/`)
 
 | Berkas | Lokasi | Fungsi & Tanggung Jawab | Menyambung Ke (*Connections*) |
 | :--- | :--- | :--- | :--- |
@@ -206,7 +206,7 @@ hike-rent/
 
 ---
 
-### C. Modul Pembayaran Sewa (`app/user/payment/` & `components/features/payment/`)
+### Modul Pembayaran Sewa (`app/user/payment/` & `components/features/payment/`)
 
 | Berkas | Lokasi | Fungsi & Tanggung Jawab | Menyambung Ke (*Connections*) |
 | :--- | :--- | :--- | :--- |
@@ -222,7 +222,7 @@ hike-rent/
 
 ---
 
-### D. Modul Admin Katalog (`app/admin/katalog/`)
+### Modul Admin Katalog (`app/admin/katalog/`)
 
 | Berkas | Lokasi | Fungsi & Tanggung Jawab | Menyambung Ke (*Connections*) |
 | :--- | :--- | :--- | :--- |
@@ -237,7 +237,7 @@ hike-rent/
 
 ---
 
-### E. Modul Admin Approval (`app/admin/approval/`)
+### Modul Admin Approval (`app/admin/approval/`)
 
 | Berkas | Lokasi | Fungsi & Tanggung Jawab | Menyambung Ke (*Connections*) |
 | :--- | :--- | :--- | :--- |
@@ -251,7 +251,7 @@ hike-rent/
 
 ---
 
-### F. Modul Admin Packages (`app/admin/packages/`)
+### Modul Admin Packages (`app/admin/packages/`)
 
 | Berkas | Lokasi | Fungsi & Tanggung Jawab | Menyambung Ke (*Connections*) |
 | :--- | :--- | :--- | :--- |
@@ -261,7 +261,7 @@ hike-rent/
 
 ---
 
-### G. Modul Kalkulator & Rekomendasi (`app/user/kalkulator/` & `rekomendasi/`)
+### Modul Kalkulator & Rekomendasi (`app/user/kalkulator/` & `rekomendasi/`)
 
 | Berkas | Lokasi | Fungsi & Tanggung Jawab | Menyambung Ke (*Connections*) |
 | :--- | :--- | :--- | :--- |
@@ -274,7 +274,7 @@ hike-rent/
 
 ---
 
-### H. Modul Pengujian API (`app/api-test/`)
+### Modul Pengujian API (`app/api-test/`)
 
 | Berkas | Lokasi | Fungsi & Tanggung Jawab | Menyambung Ke (*Connections*) |
 | :--- | :--- | :--- | :--- |
@@ -285,7 +285,7 @@ hike-rent/
 
 ---
 
-### I. Modul Core, Store, Adapter, & Gateway (`lib/` & `services/`)
+### Modul Core, Store, Adapter, & Gateway (`lib/` & `services/`)
 
 | Berkas | Lokasi | Fungsi & Tanggung Jawab | Menyambung Ke (*Connections*) |
 | :--- | :--- | :--- | :--- |
@@ -301,7 +301,7 @@ hike-rent/
 
 ---
 
-## 🔁 4. Aliran Data End-to-End Transaksi Sewa (*End-to-End Data Flow*)
+## 🔁 Aliran Data End-to-End Transaksi Sewa (*End-to-End Data Flow*)
 
 Sebagai gambaran keterhubungan antar-berkas, berikut adalah rekam jejak alur data sebuah transaksi penyewaan alat di NEXORA:
 
