@@ -2,6 +2,8 @@
 
 import { statusStyle } from "@/constants/rentalStatus";
 import { formatRupiah } from "@/lib/utils/hitungBiaya";
+import RentalCardActions from "./RentalCardActions";
+import RentalCardAuditTrail from "./RentalCardAuditTrail";
 
 export default function RentalApprovalCard({
   req,
@@ -292,7 +294,7 @@ export default function RentalApprovalCard({
                   "Peralatan telah dikembalikan ke basecamp dalam kondisi baik. Peminjaman selesai."
                 )
               }
-              className="rounded-xl bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-700 border border-emerald-200 shadow-sm hover:bg-emerald-200 transition-all disabled:opacity-50"
+              className="rounded-xl bg-moss px-4 py-2 text-xs font-semibold text-fog shadow-sm hover:bg-[#3d593c] transition-all disabled:opacity-50"
             >
               ✓ Alat Dikembalikan (Selesaikan Transaksi)
             </button>
@@ -300,14 +302,14 @@ export default function RentalApprovalCard({
 
           {/* Transaksi Selesai */}
           {isFinished && (
-            <span className="rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+            <span className="rounded-xl bg-paper px-3 py-1.5 font-mono text-xs text-ink/60 border border-line">
               ✓ Transaksi Selesai & Ditutup
             </span>
           )}
 
           {/* Transaksi Ditolak */}
           {isRejected && (
-            <span className="rounded-xl bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 border border-rose-200">
+            <span className="rounded-xl bg-alert/10 px-3 py-1.5 font-mono text-xs text-alert border border-alert/20">
               ✕ Pengajuan Ditolak / Dibatalkan
             </span>
           )}
